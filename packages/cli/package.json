@@ -1,0 +1,18 @@
+{
+  "name": "@stabbleorg/rewarder-cli",
+  "version": "0.1.0",
+  "main": "src",
+  "types": "src/index.d.ts",
+  "license": "MIT",
+  "scripts": {
+    "cli": "node ."
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.31.0",
+    "@solana/spl-token": "^0.4.13",
+    "@solana/web3.js": "^1.98.0",
+    "@stabbleorg/rewarder-sdk": "^0.1.0",
+    "@stabbleorg/anchor-contrib": "^2.0.0",
+    "commander": "^11.0.0"
+  }
+}
