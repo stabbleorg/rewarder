@@ -7,6 +7,7 @@ pub fn process_create_pool(ctx: Context<CreatePool>, weight: u32) -> Result<()> 
     ctx.accounts.pool.set_inner(Pool {
         rewarder: ctx.accounts.rewarder.key(),
         mint: ctx.accounts.mint.key(),
+        decimals: ctx.accounts.mint.decimals,
         weight,
         total_amount: 0,
         total_rewards_debt: 0,

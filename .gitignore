@@ -1,0 +1,12 @@
+.DS_Store
+.anchor/*
+!.anchor/build.sh
+.npmrc
+target
+**/*.rs.bk
+dist
+node_modules
+test-ledger
+.yarn
+*.log
+*.so

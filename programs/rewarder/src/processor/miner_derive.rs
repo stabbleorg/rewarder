@@ -12,7 +12,6 @@ pub fn process_derive_miner(ctx: Context<DeriveMiner>) -> Result<()> {
         rewards_debt: 0,
         rewards_credit: 0,
         rewards_claimed: 0,
-        last_updated_at: 0,
     });
 
     ctx.accounts.pool.num_miners += 1;

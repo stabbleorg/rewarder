@@ -91,6 +91,8 @@ pub fn process_claim_miner(ctx: Context<ClaimMiner>) -> Result<()> {
 
     let amount = ctx.accounts.with.miner.rewards_claimed - rewards_claimed;
 
+    ctx.accounts.with.rewarder.total_rewards_claimed += amount;
+
     ctx.accounts.with.rewarder.authority_seeds(|signer_seed| {
         transfer_checked(
             CpiContext::new(
@@ -209,7 +211,7 @@ pub struct ClaimMiner<'info> {
 impl<'info> Validate<'info> for ClaimMiner<'info> {
     fn validate(&self) -> Result<()> {
         assert_eq!(self.user_token.to_account_info().owner.key(), self.token_program.key());
-        assert_eq!(self.mint.key(), self.with.rewarder.reward_mint);
+        assert_eq!(self.mint.key(), self.with.rewarder.mint);
         assert_eq!(self.beneficiary.key(), self.with.miner.beneficiary);
 
         Ok(())

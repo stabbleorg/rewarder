@@ -26,9 +26,6 @@ pub struct Miner {
 
     /// The total rewards that the miner has claimed so far.
     pub rewards_claimed: u64,
-
-    /// Unix timestamp of the last update to the miner's state (e.g., when staked_amount or rewards were last recalculated).
-    pub last_updated_at: i64,
 }
 
 impl Miner {

@@ -7,7 +7,9 @@ pub struct Rewarder {
     pub admin: Pubkey,
 
     /// The mint of the token that will be distributed as rewards.
-    pub reward_mint: Pubkey,
+    pub mint: Pubkey,
+
+    pub decimals: u8,
 
     /// Bump seed for the PDA that holds the reward tokens.
     pub authority_bump: u8,
@@ -17,6 +19,8 @@ pub struct Rewarder {
 
     /// Total rewards allocated for the current epoch.
     pub total_rewards: u64,
+
+    pub total_rewards_claimed: u64,
 
     /// The sum of all pool weights; used to compute reward distribution across pools.
     pub total_weights: u128,

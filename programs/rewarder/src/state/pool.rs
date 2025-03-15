@@ -9,6 +9,8 @@ pub struct Pool {
     /// The mint of the token that users stake in this pool.
     pub mint: Pubkey,
 
+    pub decimals: u8,
+
     /// Weight multiplier for the pool.
     pub weight: u32,
 

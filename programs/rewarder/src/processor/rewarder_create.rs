@@ -16,10 +16,12 @@ pub fn process_create_rewarder(
 
     ctx.accounts.rewarder.set_inner(Rewarder {
         admin: ctx.accounts.admin.key(),
-        reward_mint: ctx.accounts.reward_mint.key(),
+        mint: ctx.accounts.mint.key(),
+        decimals: ctx.accounts.mint.decimals,
         authority_bump: ctx.bumps.rewarder_authority,
         cumulative_rewards: 0,
         total_rewards,
+        total_rewards_claimed: 0,
         total_weights: 0,
         rewards_per_weight: 0,
         num_pools: 0,
@@ -38,7 +40,7 @@ pub fn process_create_rewarder(
 pub struct CreateRewarder<'info> {
     pub admin: Signer<'info>,
 
-    pub reward_mint: InterfaceAccount<'info, Mint>,
+    pub mint: InterfaceAccount<'info, Mint>,
 
     #[account(zero, rent_exempt = enforce)]
     pub rewarder: Account<'info, Rewarder>,
@@ -50,7 +52,7 @@ pub struct CreateRewarder<'info> {
 
 impl<'info> Validate<'info> for CreateRewarder<'info> {
     fn validate(&self) -> Result<()> {
-        assert!(is_supported_mint(&self.reward_mint).unwrap());
+        assert!(is_supported_mint(&self.mint).unwrap());
 
         Ok(())
     }
