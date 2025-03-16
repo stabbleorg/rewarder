@@ -1,15 +1,16 @@
 import { assert } from "chai";
-import { AnchorProvider } from "@coral-xyz/anchor";
+import { AnchorError, AnchorProvider } from "@coral-xyz/anchor";
 import {
   createAssociatedTokenAccount,
   createMint,
   mintTo,
 } from "@solana/spl-token";
 import { Keypair, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
-import { RewarderContext } from "@stabbleorg/rewarder-sdk";
+import { RewarderContext, GovernoContext } from "@stabbleorg/rewarder-sdk";
 
 const REWARD_MINT_KEYPAIR = Keypair.generate();
 const LP_MINT_KEYPAIR = Keypair.generate();
+const VE_MINT_KEYPAIR = Keypair.generate();
 
 const PAYER_KEYPAIR = Keypair.generate();
 
@@ -20,8 +21,12 @@ function sleep(ms: number) {
 describe("rewarder", () => {
   const provider = AnchorProvider.env();
   const rewarderContext = new RewarderContext(provider);
+  const governoContext = new GovernoContext(provider);
 
-  let rewarderAddress: PublicKey, poolAddress: PublicKey;
+  let rewarderAddress: PublicKey,
+    poolAddress: PublicKey,
+    governoAddress: PublicKey,
+    vePoolAddress: PublicKey;
 
   before(async () => {
     await provider.connection.confirmTransaction({
@@ -77,7 +82,7 @@ describe("rewarder", () => {
     );
   });
 
-  it("creates rewarder", async () => {
+  it("should create a rewarder", async () => {
     const time = Date.now();
     const totalRewards = 500000; // 500K
 
@@ -100,7 +105,7 @@ describe("rewarder", () => {
     rewarderAddress = address;
   });
 
-  it("creates pool", async () => {
+  it("should create a pool", async () => {
     const { address, signature } = await rewarderContext.createPool({
       rewarderAddress,
       mintAddress: LP_MINT_KEYPAIR.publicKey,
@@ -118,11 +123,80 @@ describe("rewarder", () => {
     assert.equal(pool.dailyRewards, 0);
 
     poolAddress = address;
+  });
+
+  it("should create a governo", async () => {
+    const { address, signature } = await governoContext.createGoverno({
+      mintAddress: LP_MINT_KEYPAIR.publicKey,
+      minLockDuration: 1,
+      maxLockDuration: 30,
+      veMintKeypair: VE_MINT_KEYPAIR,
+    });
+
+    await provider.connection.confirmTransaction({
+      ...(await provider.connection.getLatestBlockhash()),
+      signature,
+    });
+
+    const governo = await governoContext.loadGoverno(address);
+    assert.deepEqual(governo.govMintAddress, LP_MINT_KEYPAIR.publicKey);
+    assert.deepEqual(governo.veMintAddress, VE_MINT_KEYPAIR.publicKey);
+    assert.equal(governo.totalLockedAmount, 0);
+
+    governoAddress = address;
+  });
+
+  it("should create a pool for governo", async () => {
+    const { address, signature } = await rewarderContext.createPool({
+      rewarderAddress,
+      mintAddress: VE_MINT_KEYPAIR.publicKey,
+      weight: 1,
+    });
+
+    await provider.connection.confirmTransaction({
+      ...(await provider.connection.getLatestBlockhash()),
+      signature,
+    });
+
+    const pool = await rewarderContext.loadPool(address);
+    assert.deepEqual(pool.mintAddress, VE_MINT_KEYPAIR.publicKey);
+    assert.equal(pool.weight, 1);
+    assert.equal(pool.dailyRewards, 0);
+
+    vePoolAddress = address;
 
     await sleep(5_000);
   });
 
-  it("deposits 100 LP token", async () => {
+  it("should lock 100 LP token for 20 seconds", async () => {
+    const pool = await rewarderContext.loadPool(vePoolAddress);
+    const governo = await governoContext.loadGoverno(governoAddress);
+
+    const { signature } = await governoContext.lock({
+      pool,
+      governo,
+      amount: 100,
+      duration: 20,
+    });
+
+    await provider.connection.confirmTransaction({
+      ...(await provider.connection.getLatestBlockhash()),
+      signature,
+    });
+
+    const reloadedPool = await rewarderContext.loadPool(vePoolAddress);
+    assert.deepEqual(
+      reloadedPool.rewarder.data.totalWeights,
+      reloadedPool.data.totalWeights,
+    );
+
+    const lockers = await governoContext.loadLockers(governo);
+    const locker = lockers[0];
+    assert.equal(locker.lockedAmount, 100);
+    assert.ok(locker.votingWeight >= 100);
+  });
+
+  it("should deposit 100 LP token", async () => {
     const pool = await rewarderContext.loadPool(poolAddress);
 
     const signature = await rewarderContext.deposit({ pool, amount: 100 });
@@ -133,9 +207,10 @@ describe("rewarder", () => {
     });
 
     const reloadedPool = await rewarderContext.loadPool(poolAddress);
-    assert.deepEqual(
-      reloadedPool.rewarder.data.totalWeights,
-      reloadedPool.data.totalWeights,
+    assert.ok(
+      reloadedPool.rewarder.data.totalWeights.gt(
+        reloadedPool.data.totalWeights,
+      ),
     );
     assert.ok(
       reloadedPool.rewarder.data.lastUpdatedAt.gte(
@@ -154,13 +229,12 @@ describe("rewarder", () => {
     const miner = await rewarderContext.loadMiner(reloadedPool);
     assert.isNotNull(miner);
     assert.equal(miner.amount, 100);
-    assert.equal(miner.pool.dailyRewards, miner.pool.rewarder.dailyRewards);
 
     await sleep(5_000);
     assert.ok(miner.rewards > 0);
   });
 
-  it("withdraws 50 LP token", async () => {
+  it("should withdraw 50 LP token", async () => {
     const pool = await rewarderContext.loadPool(poolAddress);
 
     const signature = await rewarderContext.withdraw({ pool, amount: 50 });
@@ -171,9 +245,10 @@ describe("rewarder", () => {
     });
 
     const reloadedPool = await rewarderContext.loadPool(poolAddress);
-    assert.deepEqual(
-      reloadedPool.rewarder.data.totalWeights,
-      reloadedPool.data.totalWeights,
+    assert.ok(
+      reloadedPool.rewarder.data.totalWeights.gt(
+        reloadedPool.data.totalWeights,
+      ),
     );
     assert.ok(
       reloadedPool.rewarder.data.lastUpdatedAt.gte(
@@ -197,7 +272,7 @@ describe("rewarder", () => {
     assert.ok(miner.rewards > 0);
   });
 
-  it("deposits 50 LP token", async () => {
+  it("should deposit 50 LP token", async () => {
     const pool = await rewarderContext.loadPool(poolAddress);
 
     const signature = await rewarderContext.deposit({ pool, amount: 50 });
@@ -208,9 +283,10 @@ describe("rewarder", () => {
     });
 
     const reloadedPool = await rewarderContext.loadPool(poolAddress);
-    assert.deepEqual(
-      reloadedPool.rewarder.data.totalWeights,
-      reloadedPool.data.totalWeights,
+    assert.ok(
+      reloadedPool.rewarder.data.totalWeights.gt(
+        reloadedPool.data.totalWeights,
+      ),
     );
     assert.ok(
       reloadedPool.rewarder.data.lastUpdatedAt.gte(
@@ -234,7 +310,7 @@ describe("rewarder", () => {
     assert.ok(miner.rewards > 0);
   });
 
-  it("claim rewards", async () => {
+  it("should claim rewards", async () => {
     const pool = await rewarderContext.loadPool(poolAddress);
 
     const signature = await rewarderContext.claim({ pool });
@@ -251,5 +327,60 @@ describe("rewarder", () => {
       miner.rewardsClaimed,
       miner.pool.rewarder.totalRewardsClaimed,
     );
+  });
+
+  it("should claim locker rewards", async () => {
+    const governo = await governoContext.loadGoverno(governoAddress);
+    const lockers = await governoContext.loadLockers(governo);
+    const locker = lockers[0];
+
+    const pool = await rewarderContext.loadPool(vePoolAddress);
+    const miner = await rewarderContext.loadMiner(
+      pool,
+      locker.authorityAddress,
+    );
+    assert.isNotNull(miner);
+
+    const signature = await governoContext.claim({ miner, locker });
+
+    await provider.connection.confirmTransaction({
+      ...(await provider.connection.getLatestBlockhash()),
+      signature,
+    });
+  });
+
+  it("should should not unlock", async () => {
+    const governo = await governoContext.loadGoverno(governoAddress);
+    const lockers = await governoContext.loadLockers(governo);
+    const locker = lockers[0];
+
+    const pool = await rewarderContext.loadPool(vePoolAddress);
+
+    try {
+      await governoContext.unlock({ pool, locker });
+      assert.fail();
+    } catch (err) {
+      assert.instanceOf(err, Error);
+    }
+
+    await sleep(5_000);
+  });
+
+  it("should should unlock", async () => {
+    const governo = await governoContext.loadGoverno(governoAddress);
+    const lockers = await governoContext.loadLockers(governo);
+    const locker = lockers[0];
+
+    const pool = await rewarderContext.loadPool(vePoolAddress);
+
+    const signature = await governoContext.unlock({ pool, locker });
+
+    await provider.connection.confirmTransaction({
+      ...(await provider.connection.getLatestBlockhash()),
+      signature,
+    });
+
+    const postLockers = await governoContext.loadLockers(governo);
+    assert.equal(postLockers.length, 0);
   });
 });

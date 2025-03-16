@@ -18,10 +18,9 @@ import {
   TransactionArgs,
   WalletContext,
 } from "@stabbleorg/anchor-contrib";
-import { Pool, Rewarder } from "../accounts";
+import { Rewarder, Pool, Miner } from "../accounts";
 import { type Rewarder as IDLType } from "../generated/rewarder";
 import IDL from "../generated/idl/rewarder.json";
-import { Miner } from "../accounts/miner";
 
 export const REWARDER_PROGRAM_ID = new PublicKey(IDL.address);
 
@@ -85,6 +84,28 @@ export class RewarderContext<
     if (!data) return null;
 
     return new Miner(pool, data);
+  }
+
+  async loadMiners(
+    pool: Pool,
+    beneficiaryAddress: PublicKey = this.walletAddress,
+  ): Promise<Miner[]> {
+    const accounts = await this.program.account.miner.all([
+      {
+        memcmp: {
+          offset: 8,
+          bytes: pool.address.toBase58(),
+        },
+      },
+      {
+        memcmp: {
+          offset: 72,
+          bytes: beneficiaryAddress.toBase58(),
+        },
+      },
+    ]);
+
+    return accounts.map((account) => new Miner(pool, account.account));
   }
 
   async createRewarder({
@@ -235,6 +256,60 @@ export class RewarderContext<
     pool: Pool;
     amount: string | number;
   }>): Promise<TransactionSignature> {
+    return this.sendSmartTransaction(
+      await this.createDepositInstructions({ pool, amount }),
+      [],
+      altAccounts,
+      priorityLevel,
+      maxPriorityMicroLamports,
+    );
+  }
+
+  async withdraw({
+    pool,
+    amount,
+    altAccounts,
+    priorityLevel,
+    maxPriorityMicroLamports,
+  }: TransactionArgs<{
+    pool: Pool;
+    amount: string | number;
+  }>): Promise<TransactionSignature> {
+    return this.sendSmartTransaction(
+      await this.createWithdrawInstructions({ pool, amount }),
+      [],
+      altAccounts,
+      priorityLevel,
+      maxPriorityMicroLamports,
+    );
+  }
+
+  async claim({
+    pool,
+    altAccounts,
+    priorityLevel,
+    maxPriorityMicroLamports,
+  }: TransactionArgs<{
+    pool: Pool;
+  }>): Promise<TransactionSignature> {
+    return this.sendSmartTransaction(
+      await this.createClaimInstructions({ pool }),
+      [],
+      altAccounts,
+      priorityLevel,
+      maxPriorityMicroLamports,
+    );
+  }
+
+  async createDepositInstructions({
+    pool,
+    amount,
+    authorityAddress = this.walletAddress,
+  }: {
+    pool: Pool;
+    amount: string | number;
+    authorityAddress?: PublicKey;
+  }): Promise<TransactionInstruction[]> {
     const instructions: TransactionInstruction[] = [];
 
     const data = await this.provider.connection.getAccountInfo(
@@ -244,14 +319,14 @@ export class RewarderContext<
 
     const miner = await this.loadMiner(pool);
     const minerAddress = RewarderContext.getMinerAddress(
-      this.walletAddress,
+      authorityAddress,
       pool.address,
     );
 
     if (!miner) {
       instructions.push(
         await this.program.methods
-          .createMiner(this.walletAddress)
+          .createMiner(authorityAddress)
           .accountsStrict({
             payer: this.walletAddress,
             miner: minerAddress,
@@ -292,7 +367,7 @@ export class RewarderContext<
             pool: pool.address,
             rewarder: pool.rewarder.address,
           },
-          authority: this.walletAddress,
+          authority: authorityAddress,
           mint: pool.mintAddress,
           userToken: userTokenAddress,
           minerToken: minerTokenAddress,
@@ -301,25 +376,18 @@ export class RewarderContext<
         .instruction(),
     );
 
-    return this.sendSmartTransaction(
-      instructions,
-      [],
-      altAccounts,
-      priorityLevel,
-      maxPriorityMicroLamports,
-    );
+    return instructions;
   }
 
-  async withdraw({
+  async createWithdrawInstructions({
     pool,
     amount,
-    altAccounts,
-    priorityLevel,
-    maxPriorityMicroLamports,
-  }: TransactionArgs<{
+    authorityAddress = this.walletAddress,
+  }: {
     pool: Pool;
     amount: string | number;
-  }>): Promise<TransactionSignature> {
+    authorityAddress?: PublicKey;
+  }): Promise<TransactionInstruction[]> {
     const instructions: TransactionInstruction[] = [];
 
     const data = await this.provider.connection.getAccountInfo(
@@ -328,14 +396,14 @@ export class RewarderContext<
     const tokenProgramAddress = data!.owner;
 
     const minerAddress = RewarderContext.getMinerAddress(
-      this.walletAddress,
+      authorityAddress,
       pool.address,
     );
 
     const { address: userTokenAddress, instruction: createUserAtaIX } =
       await this.getOrCreateAssociatedTokenAddressInstruction(
         pool.mintAddress,
-        this.walletAddress,
+        authorityAddress,
         true,
         tokenProgramAddress,
       );
@@ -357,7 +425,7 @@ export class RewarderContext<
             pool: pool.address,
             rewarder: pool.rewarder.address,
           },
-          authority: this.walletAddress,
+          authority: authorityAddress,
           mint: pool.mintAddress,
           userToken: userTokenAddress,
           minerToken: minerTokenAddress,
@@ -366,23 +434,16 @@ export class RewarderContext<
         .instruction(),
     );
 
-    return this.sendSmartTransaction(
-      instructions,
-      [],
-      altAccounts,
-      priorityLevel,
-      maxPriorityMicroLamports,
-    );
+    return instructions;
   }
 
-  async claim({
+  async createClaimInstructions({
     pool,
-    altAccounts,
-    priorityLevel,
-    maxPriorityMicroLamports,
-  }: TransactionArgs<{
+    authorityAddress = this.walletAddress,
+  }: {
     pool: Pool;
-  }>): Promise<TransactionSignature> {
+    authorityAddress?: PublicKey;
+  }): Promise<TransactionInstruction[]> {
     const instructions: TransactionInstruction[] = [];
 
     const data = await this.provider.connection.getAccountInfo(
@@ -391,14 +452,14 @@ export class RewarderContext<
     const tokenProgramAddress = data!.owner;
 
     const minerAddress = RewarderContext.getMinerAddress(
-      this.walletAddress,
+      authorityAddress,
       pool.address,
     );
 
     const { address: userTokenAddress, instruction: createUserAtaIX } =
       await this.getOrCreateAssociatedTokenAddressInstruction(
         pool.rewarder.mintAddress,
-        this.walletAddress,
+        authorityAddress,
         true,
         tokenProgramAddress,
       );
@@ -430,13 +491,7 @@ export class RewarderContext<
         .instruction(),
     );
 
-    return this.sendSmartTransaction(
-      instructions,
-      [],
-      altAccounts,
-      priorityLevel,
-      maxPriorityMicroLamports,
-    );
+    return instructions;
   }
 
   static getRewarderAuthorityAddress(rewarderAddress: PublicKey): PublicKey {

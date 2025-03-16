@@ -110,7 +110,7 @@ pub struct CloseLocker<'info> {
     #[account(mut)]
     pub ve_mint: InterfaceAccount<'info, Mint>,
 
-    #[account(mut, has_one = authority, has_one = governo)]
+    #[account(mut, close = authority, has_one = authority, has_one = governo)]
     pub locker: Account<'info, Locker>,
 
     /// CHECK: OK

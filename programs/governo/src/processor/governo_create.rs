@@ -9,12 +9,13 @@ pub fn process_create_governo(
     max_lock_duration: u32,
 ) -> Result<()> {
     require_gt!(min_lock_duration, 0);
-    require_eq!(max_lock_duration, min_lock_duration);
+    require_gt!(max_lock_duration, min_lock_duration);
 
     ctx.accounts.governo.set_inner(Governo {
         admin: ctx.accounts.admin.key(),
         gov_mint: ctx.accounts.gov_mint.key(),
         ve_mint: ctx.accounts.ve_mint.key(),
+        decimals: ctx.accounts.gov_mint.decimals,
         authority_bump: ctx.bumps.governo_authority,
         min_lock_duration,
         max_lock_duration,

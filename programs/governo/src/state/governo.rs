@@ -15,6 +15,8 @@ pub struct Governo {
     /// This token represents voting weight and is typically derived from staked governance tokens.
     pub ve_mint: Pubkey,
 
+    pub decimals: u8,
+
     pub authority_bump: u8,
 
     pub min_lock_duration: u32,
