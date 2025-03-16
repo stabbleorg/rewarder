@@ -1,5 +1,6 @@
 use crate::state::*;
 use anchor_lang::prelude::*;
+use anchor_spl::token_interface::TokenAccount;
 use rewarder::{
     cpi::{
         accounts::{ClaimMiner, UpdateMiner, WithMiner},
@@ -35,6 +36,8 @@ pub fn process_stake_locker(ctx: Context<UpdateLocker>) -> Result<()> {
 }
 
 pub fn process_unstake_locker(ctx: Context<UpdateLocker>) -> Result<()> {
+    require_gt!(Clock::get()?.unix_timestamp, ctx.accounts.locker.unlocks_at);
+
     ctx.accounts.locker.authority_seeds(|signer_seed| {
         withdraw_miner(
             CpiContext::new(
@@ -72,7 +75,7 @@ pub fn process_claim_locker(ctx: Context<ClaimLocker>) -> Result<()> {
                     beneficiary: ctx.accounts.locker_authority.to_account_info(),
                     rewarder_authority: ctx.accounts.rewarder_authority.to_account_info(),
                     mint: ctx.accounts.mint.to_account_info(),
-                    user_token: ctx.accounts.user_token.to_account_info(),
+                    user_token: ctx.accounts.authority_token.to_account_info(),
                     rewarder_token: ctx.accounts.rewarder_token.to_account_info(),
                     token_program: ctx.accounts.token_program.to_account_info(),
                 },
@@ -84,10 +87,7 @@ pub fn process_claim_locker(ctx: Context<ClaimLocker>) -> Result<()> {
 
 #[derive(Accounts)]
 pub struct UpdateLocker<'info> {
-    #[account(mut)]
-    pub authority: Signer<'info>,
-
-    #[account(mut, has_one = authority, has_one = governo)]
+    #[account(mut, has_one = governo)]
     pub locker: Account<'info, Locker>,
 
     /// CHECK: OK
@@ -128,9 +128,7 @@ pub struct UpdateLocker<'info> {
 
 #[derive(Accounts)]
 pub struct ClaimLocker<'info> {
-    pub authority: Signer<'info>,
-
-    #[account(mut, has_one = authority)]
+    #[account(mut)]
     pub locker: Account<'info, Locker>,
 
     /// CHECK: OK
@@ -158,9 +156,11 @@ pub struct ClaimLocker<'info> {
     /// CHECK: OK
     pub mint: UncheckedAccount<'info>,
 
-    /// CHECK: OK
-    #[account(mut)]
-    pub user_token: UncheckedAccount<'info>,
+    #[account(mut,
+        associated_token::mint = mint,
+        associated_token::authority = locker.authority,
+    )]
+    pub authority_token: InterfaceAccount<'info, TokenAccount>,
 
     /// CHECK: OK
     #[account(mut)]

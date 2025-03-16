@@ -4,11 +4,28 @@ use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{
     mint_to_checked, transfer_checked, Mint, MintToChecked, TokenAccount, TransferChecked,
 };
+use math::fixed_math::{FixedDiv, FixedMul, FixedPow};
+
+const MULTIPLIER_BASE: u64 = 1_050_000_000;
 
 pub fn process_create_locker(ctx: Context<CreateLocker>, amount: u64, duration: u32) -> Result<()> {
-    ctx.accounts.governo.total_locked_amount += amount;
+    require_gte!(duration, ctx.accounts.governo.min_lock_duration);
+    require_gte!(ctx.accounts.governo.max_lock_duration, duration);
 
-    let ve_amount = amount; // TODO: amount * 1.05 ^ n
+    // amount * 1.05 ^ n
+    let ve_amount = amount
+        .mul_down(
+            MULTIPLIER_BASE
+                .pow_down(
+                    (duration as u64)
+                        .div_down(ctx.accounts.governo.min_lock_duration as u64)
+                        .unwrap(),
+                )
+                .unwrap(),
+        )
+        .unwrap();
+
+    ctx.accounts.governo.total_locked_amount += amount;
 
     ctx.accounts.locker.set_inner(Locker {
         governo: ctx.accounts.governo.key(),

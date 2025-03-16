@@ -315,7 +315,6 @@ export class GovernoContext<
       await this.program.methods
         .stakeLocker()
         .accountsStrict({
-          authority: this.walletAddress,
           locker: address,
           lockerAuthority: authorityAddress,
           governo: governo.address,
@@ -376,7 +375,6 @@ export class GovernoContext<
       await this.program.methods
         .unstakeLocker()
         .accountsStrict({
-          authority: this.walletAddress,
           locker: locker.address,
           lockerAuthority: locker.authorityAddress,
           governo: locker.governo.address,
@@ -449,12 +447,13 @@ export class GovernoContext<
     const instructions: TransactionInstruction[] = [];
 
     const {
-      address: userRewardTokenAddress,
-      instruction: createUserRewardAtaIX,
+      address: authorityTokenAddress,
+      instruction: createAuthorityRewardAtaIX,
     } = await this.getOrCreateAssociatedTokenAddressInstruction(
       miner.pool.rewarder.mintAddress,
     );
-    if (createUserRewardAtaIX) instructions.push(createUserRewardAtaIX);
+    if (createAuthorityRewardAtaIX)
+      instructions.push(createAuthorityRewardAtaIX);
 
     const rewarderRewardTokenAddress = getAssociatedTokenAddressSync(
       miner.pool.rewarder.mintAddress,
@@ -466,7 +465,6 @@ export class GovernoContext<
       await this.program.methods
         .claimLocker()
         .accountsStrict({
-          authority: this.walletAddress,
           locker: locker.address,
           lockerAuthority: locker.authorityAddress,
           rewarderProgram: REWARDER_PROGRAM_ID,
@@ -475,7 +473,7 @@ export class GovernoContext<
           rewarder: miner.pool.rewarder.address,
           rewarderAuthority: miner.pool.rewarder.authorityAddress,
           mint: miner.pool.rewarder.mintAddress,
-          userToken: userRewardTokenAddress,
+          authorityToken: authorityTokenAddress,
           rewarderToken: rewarderRewardTokenAddress,
           tokenProgram: TOKEN_PROGRAM_ID,
         })

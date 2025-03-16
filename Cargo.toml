@@ -17,3 +17,4 @@ codegen-units = 1
 anchor-lang = "0.31.0"
 anchor-spl = "0.31.0"
 anchor-common = { git = "https://github.com/stabbleorg/anchor-common.git", rev = "d44abfdac69e158759ba8a130acd929ff26378f4" }
+math = { git = "https://github.com/stabbleorg/amm-sdk.git", rev = "71843f4d848e133e87ce3f42e011b78bf926c5a3" }
