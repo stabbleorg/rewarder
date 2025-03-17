@@ -87,16 +87,10 @@ export class RewarderContext<
   }
 
   async loadMiners(
-    pool: Pool,
+    pools: Map<PublicKey, Pool>,
     beneficiaryAddress: PublicKey = this.walletAddress,
   ): Promise<Miner[]> {
     const accounts = await this.program.account.miner.all([
-      {
-        memcmp: {
-          offset: 8,
-          bytes: pool.address.toBase58(),
-        },
-      },
       {
         memcmp: {
           offset: 72,
@@ -105,7 +99,9 @@ export class RewarderContext<
       },
     ]);
 
-    return accounts.map((account) => new Miner(pool, account.account));
+    return accounts.map(
+      (account) => new Miner(pools.get(account.account.pool)!, account.account),
+    );
   }
 
   async createRewarder({
