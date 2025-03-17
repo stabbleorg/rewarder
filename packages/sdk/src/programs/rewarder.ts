@@ -120,7 +120,7 @@ export class RewarderContext<
     maxPriorityMicroLamports,
   }: TransactionArgs<{
     mintAddress: PublicKey;
-    totalRewards: number;
+    totalRewards: string | number;
     startsAt: Date;
     endsAt: Date;
     liquidity?: boolean;
@@ -196,6 +196,43 @@ export class RewarderContext<
     );
 
     return { address, signature };
+  }
+
+  async updateRewarder({
+    rewarder,
+    totalRewards,
+    startsAt,
+    endsAt,
+    liquidity = true,
+    altAccounts,
+    priorityLevel,
+    maxPriorityMicroLamports,
+  }: TransactionArgs<{
+    rewarder: Rewarder;
+    totalRewards: string | number;
+    startsAt: Date;
+    endsAt: Date;
+    liquidity?: boolean;
+  }>): Promise<TransactionSignature> {
+    return this.sendSmartTransaction(
+      [
+        await this.program.methods
+          .updateRewarder(
+            SafeAmount.toU64Amount(totalRewards, rewarder.data.decimals),
+            new BN(startsAt.getTime() / 1000),
+            new BN(endsAt.getTime() / 1000),
+          )
+          .accountsStrict({
+            admin: this.walletAddress,
+            rewarder: rewarder.address,
+          })
+          .instruction(),
+      ],
+      [],
+      altAccounts,
+      priorityLevel,
+      maxPriorityMicroLamports,
+    );
   }
 
   async createPool({
