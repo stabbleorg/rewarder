@@ -60,17 +60,20 @@ export class RewarderContext<
     return new Pool(rewarder, poolAddress, data);
   }
 
-  async loadPools(rewarders: Map<PublicKey, Rewarder>): Promise<Pool[]> {
+  async loadPools(rewarders: Map<string, Rewarder>): Promise<Pool[]> {
     const accounts = await this.program.account.pool.all();
 
-    return accounts.map(
-      (account) =>
-        new Pool(
-          rewarders.get(account.account.rewarder)!,
-          account.publicKey,
-          account.account,
-        ),
-    );
+    const pools: Pool[] = [];
+
+    for (const { publicKey, account } of accounts) {
+      const rewarder = rewarders.get(account.rewarder.toBase58());
+
+      if (rewarder) {
+        pools.push(new Pool(rewarder, publicKey, account));
+      }
+    }
+
+    return pools;
   }
 
   async loadMiner(
@@ -87,7 +90,7 @@ export class RewarderContext<
   }
 
   async loadMiners(
-    pools: Map<PublicKey, Pool>,
+    pools: Map<string, Pool>,
     beneficiaryAddress: PublicKey = this.walletAddress,
   ): Promise<Miner[]> {
     const accounts = await this.program.account.miner.all([
@@ -99,9 +102,17 @@ export class RewarderContext<
       },
     ]);
 
-    return accounts.map(
-      (account) => new Miner(pools.get(account.account.pool)!, account.account),
-    );
+    const miners: Miner[] = [];
+
+    for (const { publicKey, account } of accounts) {
+      const pool = pools.get(account.pool.toBase58());
+
+      if (pool) {
+        miners.push(new Miner(pool, account));
+      }
+    }
+
+    return miners;
   }
 
   async createRewarder({
