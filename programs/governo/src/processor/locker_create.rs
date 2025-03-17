@@ -27,6 +27,8 @@ pub fn process_create_locker(ctx: Context<CreateLocker>, amount: u64, duration: 
 
     ctx.accounts.governo.total_locked_amount += amount;
 
+    let timestamp = Clock::get()?.unix_timestamp;
+
     ctx.accounts.locker.set_inner(Locker {
         governo: ctx.accounts.governo.key(),
         authority: ctx.accounts.user.key(),
@@ -34,7 +36,8 @@ pub fn process_create_locker(ctx: Context<CreateLocker>, amount: u64, duration: 
         locked_amount: amount,
         voting_weight: ve_amount,
         voting_weight_used: 0,
-        unlocks_at: Clock::get()?.unix_timestamp + duration as i64,
+        locked_at: timestamp,
+        unlocks_at: timestamp + duration as i64,
     });
 
     transfer_checked(

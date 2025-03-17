@@ -21,6 +21,9 @@ pub struct Locker {
     /// The amount of voting power already used in proposals.
     pub voting_weight_used: u64,
 
+    /// UNIX timestamp (UTC) when the tokens are locked.
+    pub locked_at: i64,
+
     /// UNIX timestamp (UTC) when the locked tokens become withdrawable.
     pub unlocks_at: i64,
 }

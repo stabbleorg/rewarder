@@ -11,6 +11,7 @@ export type LockerData = {
   lockedAmount: BN;
   votingWeight: BN;
   votingWeightUsed: BN;
+  lockedAt: BN;
   unlocksAt: BN;
 };
 
@@ -44,6 +45,10 @@ export class Locker {
       this.data.votingWeightUsed,
       this.governo.data.decimals,
     );
+  }
+
+  get lockedAt(): Date {
+    return new Date(this.data.lockedAt.toNumber() * 1000);
   }
 
   get unlocksAt(): Date {
