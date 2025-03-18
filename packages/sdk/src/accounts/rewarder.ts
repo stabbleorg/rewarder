@@ -28,7 +28,13 @@ export class Rewarder {
   constructor(
     readonly address: PublicKey,
     readonly data: RewarderData,
-  ) {}
+    readonly parentRewarder?: Rewarder,
+  ) {
+    if (parentRewarder) {
+      if (!data.parentRewarder?.equals(parentRewarder.address))
+        throw new Error("Invalid parent rewarder");
+    }
+  }
 
   get authorityAddress(): PublicKey {
     return RewarderContext.getRewarderAuthorityAddress(this.address);
@@ -36,6 +42,13 @@ export class Rewarder {
 
   get mintAddress(): PublicKey {
     return this.data.mint;
+  }
+
+  get cumulativeRewards(): number {
+    return SafeAmount.toUiAmount(
+      this.data.cumulativeRewards,
+      this.data.decimals,
+    );
   }
 
   get totalRewards(): number {
@@ -54,6 +67,10 @@ export class Rewarder {
       this.data.totalRewards.muln(86400).div(this.data.epochDuration),
       this.data.decimals,
     );
+  }
+
+  get totalWeights(): number {
+    return SafeAmount.toUiAmount(this.data.totalWeights, this.data.decimals);
   }
 
   get startsAt(): Date {

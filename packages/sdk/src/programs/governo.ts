@@ -21,12 +21,14 @@ import {
 import { Program, Provider } from "@coral-xyz/anchor";
 import {
   AddressWithTransactionSignature,
-  SafeAmount,
-  TOKEN_MINT_RENT_FEE_LAMPORTS,
   TransactionArgs,
   WalletContext,
+  SafeAmount,
+  DataUpdatedEvent,
+  SIMULATED_SIGNATURE,
+  TOKEN_MINT_RENT_FEE_LAMPORTS,
 } from "@stabbleorg/anchor-contrib";
-import { Governo, Locker, Miner, Pool } from "../accounts";
+import { Governo, GovernoData, Locker, Miner, Pool } from "../accounts";
 import { type Governo as IDLType } from "../generated/governo";
 import IDL from "../generated/idl/governo.json";
 import REWARDER_PROGRAM_IDL from "../generated/idl/rewarder.json";
@@ -501,5 +503,37 @@ export class GovernoContext<
       [Buffer.from("locker_authority"), lockerAddress.toBuffer()],
       GOVERNO_PROGRAM_ID,
     )[0];
+  }
+}
+
+export class GovernoListener {
+  private governoUpdatedEvent: number = -1;
+
+  constructor(readonly program: GovernoProgram) {}
+
+  addRewarderListeners(
+    callback: (event: DataUpdatedEvent<Partial<GovernoData>>) => void,
+  ) {
+    this.removeGovernoListeners();
+
+    this.governoUpdatedEvent = this.program.addEventListener(
+      "governoUpdatedEvent",
+      (
+        event: DataUpdatedEvent<Partial<GovernoData>>,
+        _slot: number,
+        signature: TransactionSignature,
+      ) => {
+        if (signature !== SIMULATED_SIGNATURE) {
+          callback(event);
+        }
+      },
+    );
+  }
+
+  removeGovernoListeners() {
+    if (this.governoUpdatedEvent !== -1) {
+      this.program.removeEventListener(this.governoUpdatedEvent);
+      this.governoUpdatedEvent = -1;
+    }
   }
 }

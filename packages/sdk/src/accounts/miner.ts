@@ -21,7 +21,7 @@ export class Miner {
     readonly pool: Pool,
     readonly data: MinerData,
   ) {
-    if (!pool.address.equals(data.pool)) throw new Error("Invalid parent pool");
+    if (!pool.address.equals(data.pool)) throw new Error("Invalid pool");
   }
 
   get address(): PublicKey {
