@@ -26,7 +26,7 @@ export class Pool {
     readonly data: PoolData,
   ) {
     if (!rewarder.address.equals(data.rewarder))
-      throw new Error("Invalid parent rewarder");
+      throw new Error("Invalid rewarder");
   }
 
   get dailyRewards(): number {
@@ -52,5 +52,9 @@ export class Pool {
 
   get totalAmount(): number {
     return SafeAmount.toUiAmount(this.data.totalAmount, this.data.decimals);
+  }
+
+  get totalWeights(): number {
+    return SafeAmount.toUiAmount(this.data.totalWeights, this.data.decimals);
   }
 }

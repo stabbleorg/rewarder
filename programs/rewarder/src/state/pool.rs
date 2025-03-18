@@ -1,4 +1,5 @@
 use super::Rewarder;
+use anchor_common::located::Located;
 use anchor_lang::prelude::*;
 
 #[account]
@@ -53,5 +54,83 @@ impl Pool {
         }
 
         Ok(())
+    }
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize)]
+pub struct PoolUpdatedData {
+    pub weight: u32,
+    pub total_rewards_debt: u64,
+    pub total_rewards_credit: u64,
+    pub total_rewards_distributed: u64,
+    pub total_weights: u128,
+    pub rewards_per_amount: u128,
+}
+
+#[event]
+pub struct PoolUpdatedEvent {
+    pub pubkey: Pubkey,
+    pub data: PoolUpdatedData,
+}
+
+pub trait EmitPoolUpdated {
+    fn emit_pool_updated(&self);
+}
+
+impl<T> EmitPoolUpdated for T
+where
+    T: Located<Pool>,
+{
+    fn emit_pool_updated(&self) {
+        emit!(PoolUpdatedEvent {
+            pubkey: self.key(),
+            data: PoolUpdatedData {
+                weight: self.as_ref().weight,
+                total_rewards_debt: self.as_ref().total_rewards_debt,
+                total_rewards_credit: self.as_ref().total_rewards_credit,
+                total_rewards_distributed: self.as_ref().total_rewards_distributed,
+                total_weights: self.as_ref().total_weights,
+                rewards_per_amount: self.as_ref().rewards_per_amount,
+            },
+        });
+    }
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize)]
+pub struct RewardsPerAmountUpdatedData {
+    pub total_amount: u64,
+    pub total_rewards_debt: u64,
+    pub total_rewards_credit: u64,
+    pub total_rewards_distributed: u64,
+    pub total_weights: u128,
+    pub rewards_per_amount: u128,
+}
+
+#[event]
+pub struct RewardsPerAmountUpdatedEvent {
+    pub pubkey: Pubkey,
+    pub data: RewardsPerAmountUpdatedData,
+}
+
+pub trait EmitRewardsPerAmountUpdated {
+    fn emit_rewards_per_amount_updated(&self);
+}
+
+impl<T> EmitRewardsPerAmountUpdated for T
+where
+    T: Located<Pool>,
+{
+    fn emit_rewards_per_amount_updated(&self) {
+        emit!(RewardsPerAmountUpdatedEvent {
+            pubkey: self.key(),
+            data: RewardsPerAmountUpdatedData {
+                total_amount: self.as_ref().total_amount,
+                total_rewards_debt: self.as_ref().total_rewards_debt,
+                total_rewards_credit: self.as_ref().total_rewards_credit,
+                total_rewards_distributed: self.as_ref().total_rewards_distributed,
+                total_weights: self.as_ref().total_weights,
+                rewards_per_amount: self.as_ref().rewards_per_amount,
+            },
+        });
     }
 }

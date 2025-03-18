@@ -49,3 +49,38 @@ where
         ])
     }
 }
+
+#[derive(AnchorSerialize, AnchorDeserialize)]
+pub struct MinerUpdatedData {
+    pub amount: u64,
+    pub rewards_debt: u64,
+    pub rewards_credit: u64,
+    pub rewards_claimed: u64,
+}
+
+#[event]
+pub struct MinerUpdatedEvent {
+    pub pubkey: Pubkey,
+    pub data: MinerUpdatedData,
+}
+
+pub trait EmitMinerUpdated {
+    fn emit_miner_updated(&self);
+}
+
+impl<T> EmitMinerUpdated for T
+where
+    T: Located<Miner>,
+{
+    fn emit_miner_updated(&self) {
+        emit!(MinerUpdatedEvent {
+            pubkey: self.key(),
+            data: MinerUpdatedData {
+                amount: self.as_ref().amount,
+                rewards_debt: self.as_ref().rewards_debt,
+                rewards_credit: self.as_ref().rewards_credit,
+                rewards_claimed: self.as_ref().rewards_claimed,
+            },
+        });
+    }
+}
