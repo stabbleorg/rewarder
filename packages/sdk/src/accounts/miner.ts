@@ -56,15 +56,17 @@ export class Miner {
           .add(this.pool.rewarder.data.rewardsPerWeight);
       }
 
-      rewardsPerAmount = rewardsPerWeight
-        .mul(this.pool.data.totalWeights)
-        .div(Rewarder.REWARDS_PER_WEIGHT_PRECISION)
-        .add(this.pool.data.totalRewardsCredit)
-        .sub(this.pool.data.totalRewardsDebt)
-        .sub(this.pool.data.totalRewardsDistributed)
-        .mul(Pool.REWARDS_PER_AMOUNT_PRECISION)
-        .div(this.pool.data.totalAmount)
-        .add(this.pool.data.rewardsPerAmount);
+      if (this.pool.data.totalAmount.gt(new BN(0))) {
+        rewardsPerAmount = rewardsPerWeight
+          .mul(this.pool.data.totalWeights)
+          .div(Rewarder.REWARDS_PER_WEIGHT_PRECISION)
+          .add(this.pool.data.totalRewardsCredit)
+          .sub(this.pool.data.totalRewardsDebt)
+          .sub(this.pool.data.totalRewardsDistributed)
+          .mul(Pool.REWARDS_PER_AMOUNT_PRECISION)
+          .div(this.pool.data.totalAmount)
+          .add(this.pool.data.rewardsPerAmount);
+      }
     }
 
     return SafeAmount.toUiAmount(
