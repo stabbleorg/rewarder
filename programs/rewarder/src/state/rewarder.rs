@@ -91,3 +91,81 @@ where
         ])
     }
 }
+
+#[derive(AnchorSerialize, AnchorDeserialize)]
+pub struct RewarderUpdatedData {
+    pub cumulative_rewards: u64,
+    pub total_rewards: u64,
+    pub rewards_per_weight: u128,
+    pub epoch_index: u32,
+    pub epoch_starts_at: i64,
+    pub epoch_ends_at: i64,
+    pub epoch_duration: i64,
+    pub last_updated_at: i64,
+}
+
+#[event]
+pub struct RewarderUpdatedEvent {
+    pub pubkey: Pubkey,
+    pub data: RewarderUpdatedData,
+}
+
+pub trait EmitRewarderUpdated {
+    fn emit_rewarder_updated(&self);
+}
+
+impl<T> EmitRewarderUpdated for T
+where
+    T: Located<Rewarder>,
+{
+    fn emit_rewarder_updated(&self) {
+        emit!(RewarderUpdatedEvent {
+            pubkey: self.key(),
+            data: RewarderUpdatedData {
+                cumulative_rewards: self.as_ref().cumulative_rewards,
+                total_rewards: self.as_ref().total_rewards,
+                rewards_per_weight: self.as_ref().rewards_per_weight,
+                epoch_index: self.as_ref().epoch_index,
+                epoch_starts_at: self.as_ref().epoch_starts_at,
+                epoch_ends_at: self.as_ref().epoch_ends_at,
+                epoch_duration: self.as_ref().epoch_duration,
+                last_updated_at: self.as_ref().last_updated_at,
+            },
+        });
+    }
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize)]
+pub struct RewardsPerWeightUpdatedData {
+    pub total_rewards_claimed: u64,
+    pub total_weights: u128,
+    pub rewards_per_weight: u128,
+    pub last_updated_at: i64,
+}
+
+#[event]
+pub struct RewardsPerWeightUpdatedEvent {
+    pub pubkey: Pubkey,
+    pub data: RewardsPerWeightUpdatedData,
+}
+
+pub trait EmitRewardsPerWeightUpdatedEvent {
+    fn emit_rewards_per_weight_updated(&self);
+}
+
+impl<T> EmitRewardsPerWeightUpdatedEvent for T
+where
+    T: Located<Rewarder>,
+{
+    fn emit_rewards_per_weight_updated(&self) {
+        emit!(RewardsPerWeightUpdatedEvent {
+            pubkey: self.key(),
+            data: RewardsPerWeightUpdatedData {
+                total_rewards_claimed: self.as_ref().total_rewards_claimed,
+                total_weights: self.as_ref().total_weights,
+                rewards_per_weight: self.as_ref().rewards_per_weight,
+                last_updated_at: self.as_ref().last_updated_at,
+            },
+        });
+    }
+}

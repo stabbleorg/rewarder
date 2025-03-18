@@ -14,11 +14,20 @@ import {
 import { Program, Provider } from "@coral-xyz/anchor";
 import {
   AddressWithTransactionSignature,
-  SafeAmount,
   TransactionArgs,
   WalletContext,
+  SafeAmount,
+  DataUpdatedEvent,
+  SIMULATED_SIGNATURE,
 } from "@stabbleorg/anchor-contrib";
-import { Rewarder, Pool, Miner } from "../accounts";
+import {
+  Rewarder,
+  Pool,
+  Miner,
+  RewarderData,
+  PoolData,
+  MinerData,
+} from "../accounts";
 import { type Rewarder as IDLType } from "../generated/rewarder";
 import IDL from "../generated/idl/rewarder.json";
 
@@ -553,5 +562,129 @@ export class RewarderContext<
       [Buffer.from("miner"), userAddress.toBuffer(), poolAddress.toBuffer()],
       REWARDER_PROGRAM_ID,
     )[0];
+  }
+}
+
+export class RewarderListener {
+  private rewarderUpdatedEvent: number = -1;
+  private rewardsPerWeightUpdatedEvent: number = -1;
+  private poolUpdatedEvent: number = -1;
+  private rewardsPerAmountUpdatedEvent: number = -1;
+  private minerUpdatedEvent: number = -1;
+
+  constructor(readonly program: RewarderProgram) {}
+
+  addRewarderListeners(
+    callback: (event: DataUpdatedEvent<Partial<RewarderData>>) => void,
+  ) {
+    this.removeRewarderListeners();
+
+    this.rewarderUpdatedEvent = this.program.addEventListener(
+      "rewarderUpdatedEvent",
+      (
+        event: DataUpdatedEvent<Partial<RewarderData>>,
+        _slot: number,
+        signature: TransactionSignature,
+      ) => {
+        if (signature !== SIMULATED_SIGNATURE) {
+          callback(event);
+        }
+      },
+    );
+
+    this.rewardsPerWeightUpdatedEvent = this.program.addEventListener(
+      "rewardsPerWeightUpdatedEvent",
+      (
+        event: DataUpdatedEvent<Partial<RewarderData>>,
+        _slot: number,
+        signature: TransactionSignature,
+      ) => {
+        if (signature !== SIMULATED_SIGNATURE) {
+          callback(event);
+        }
+      },
+    );
+  }
+
+  addPoolListeners(
+    callback: (event: DataUpdatedEvent<Partial<PoolData>>) => void,
+  ) {
+    this.removePoolListeners();
+
+    this.poolUpdatedEvent = this.program.addEventListener(
+      "poolUpdatedEvent",
+      (
+        event: DataUpdatedEvent<Partial<PoolData>>,
+        _slot: number,
+        signature: TransactionSignature,
+      ) => {
+        if (signature !== SIMULATED_SIGNATURE) {
+          callback(event);
+        }
+      },
+    );
+
+    this.rewardsPerAmountUpdatedEvent = this.program.addEventListener(
+      "rewardsPerAmountUpdatedEvent",
+      (
+        event: DataUpdatedEvent<Partial<PoolData>>,
+        _slot: number,
+        signature: TransactionSignature,
+      ) => {
+        if (signature !== SIMULATED_SIGNATURE) {
+          callback(event);
+        }
+      },
+    );
+  }
+
+  addMinerListeners(
+    callback: (event: DataUpdatedEvent<Partial<MinerData>>) => void,
+  ) {
+    this.removeMinerListeners();
+
+    this.minerUpdatedEvent = this.program.addEventListener(
+      "minerUpdatedEvent",
+      (
+        event: DataUpdatedEvent<Partial<MinerData>>,
+        _slot: number,
+        signature: TransactionSignature,
+      ) => {
+        if (signature !== SIMULATED_SIGNATURE) {
+          callback(event);
+        }
+      },
+    );
+  }
+
+  removeRewarderListeners() {
+    if (this.rewarderUpdatedEvent !== -1) {
+      this.program.removeEventListener(this.rewarderUpdatedEvent);
+      this.rewarderUpdatedEvent = -1;
+    }
+
+    if (this.rewardsPerWeightUpdatedEvent !== -1) {
+      this.program.removeEventListener(this.rewardsPerWeightUpdatedEvent);
+      this.rewardsPerWeightUpdatedEvent = -1;
+    }
+  }
+
+  removePoolListeners() {
+    if (this.poolUpdatedEvent !== -1) {
+      this.program.removeEventListener(this.poolUpdatedEvent);
+      this.poolUpdatedEvent = -1;
+    }
+
+    if (this.rewardsPerAmountUpdatedEvent !== -1) {
+      this.program.removeEventListener(this.rewardsPerAmountUpdatedEvent);
+      this.rewardsPerAmountUpdatedEvent = -1;
+    }
+  }
+
+  removeMinerListeners() {
+    if (this.minerUpdatedEvent !== -1) {
+      this.program.removeEventListener(this.minerUpdatedEvent);
+      this.minerUpdatedEvent = -1;
+    }
   }
 }
