@@ -9,6 +9,8 @@ pub fn process_deposit_miner(ctx: Context<UpdateMiner>, amount: u64) -> Result<(
 
     ctx.accounts.with.deposit(post_fee_amount)?;
 
+    ctx.accounts.with.emit_updated();
+
     transfer_checked(
         CpiContext::new(
             ctx.accounts.token_program.to_account_info(),
@@ -26,6 +28,8 @@ pub fn process_deposit_miner(ctx: Context<UpdateMiner>, amount: u64) -> Result<(
 
 pub fn process_withdraw_miner(ctx: Context<UpdateMiner>, amount: u64) -> Result<()> {
     ctx.accounts.with.withdraw(amount)?;
+
+    ctx.accounts.with.emit_updated();
 
     ctx.accounts.with.miner.authority_seeds(|signer_seed| {
         transfer_checked(
@@ -51,10 +55,12 @@ pub fn process_deposit_derived_miner(ctx: Context<UpdateDerivedMiner>) -> Result
     let transfer_fee = get_transfer_fee(&ctx.accounts.mint.to_account_info(), amount, Clock::get()?.epoch)?;
     if transfer_fee > 0 {
         ctx.accounts.with.withdraw(transfer_fee)?;
+        ctx.accounts.with.emit_updated();
     }
 
     let post_fee_amount = amount.saturating_sub(transfer_fee);
     ctx.accounts.with_derived.deposit(post_fee_amount)?;
+    ctx.accounts.with_derived.emit_updated();
 
     ctx.accounts.with.miner.authority_seeds(|signer_seed| {
         transfer_checked(
@@ -78,9 +84,11 @@ pub fn process_withdraw_derived_miner(ctx: Context<UpdateDerivedMiner>, amount: 
     let transfer_fee = get_transfer_fee(&ctx.accounts.mint.to_account_info(), amount, Clock::get()?.epoch)?;
     if transfer_fee > 0 {
         ctx.accounts.with.withdraw(transfer_fee)?;
+        ctx.accounts.with.emit_updated();
     }
 
     ctx.accounts.with_derived.withdraw(amount)?;
+    ctx.accounts.with_derived.emit_updated();
 
     ctx.accounts.with_derived.miner.authority_seeds(|signer_seed| {
         transfer_checked(
@@ -108,6 +116,8 @@ pub fn process_claim_miner(ctx: Context<ClaimMiner>) -> Result<()> {
     let amount = ctx.accounts.with.miner.rewards_claimed - rewards_claimed;
 
     ctx.accounts.with.rewarder.total_rewards_claimed += amount;
+
+    ctx.accounts.with.emit_updated();
 
     ctx.accounts.with.rewarder.authority_seeds(|signer_seed| {
         transfer_checked(
@@ -322,5 +332,11 @@ impl<'info> WithMiner<'info> {
             - self.miner.rewards_debt;
 
         Ok(())
+    }
+
+    pub fn emit_updated(&self) {
+        self.rewarder.emit_rewards_per_weight_updated();
+        self.pool.emit_rewards_per_amount_updated();
+        self.miner.emit_miner_updated();
     }
 }

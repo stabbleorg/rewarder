@@ -44,6 +44,9 @@ pub fn process_update_pool(ctx: Context<UpdatePool>, weight: u32) -> Result<()> 
         ctx.accounts.pool.total_weights = total_weights;
     }
 
+    ctx.accounts.pool.emit_pool_updated();
+    ctx.accounts.rewarder.emit_rewards_per_weight_updated();
+
     Ok(())
 }
 
