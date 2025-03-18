@@ -50,28 +50,28 @@ where
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
-pub struct MinerUpdatedData {
+pub struct GovernoUpdatedData {
     pub total_locked_amount: u64,
 }
 
 #[event]
 pub struct GovernoUpdatedEvent {
     pub pubkey: Pubkey,
-    pub data: MinerUpdatedData,
+    pub data: GovernoUpdatedData,
 }
 
-pub trait EmitMinerUpdated {
+pub trait EmitGovernoUpdated {
     fn emit_governo_updated(&self);
 }
 
-impl<T> EmitMinerUpdated for T
+impl<T> EmitGovernoUpdated for T
 where
     T: Located<Governo>,
 {
     fn emit_governo_updated(&self) {
         emit!(GovernoUpdatedEvent {
             pubkey: self.key(),
-            data: MinerUpdatedData {
+            data: GovernoUpdatedData {
                 total_locked_amount: self.as_ref().total_locked_amount,
             },
         });
