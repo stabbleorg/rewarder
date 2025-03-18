@@ -48,3 +48,32 @@ where
         ])
     }
 }
+
+#[derive(AnchorSerialize, AnchorDeserialize)]
+pub struct MinerUpdatedData {
+    pub total_locked_amount: u64,
+}
+
+#[event]
+pub struct GovernoUpdatedEvent {
+    pub pubkey: Pubkey,
+    pub data: MinerUpdatedData,
+}
+
+pub trait EmitMinerUpdated {
+    fn emit_governo_updated(&self);
+}
+
+impl<T> EmitMinerUpdated for T
+where
+    T: Located<Governo>,
+{
+    fn emit_governo_updated(&self) {
+        emit!(GovernoUpdatedEvent {
+            pubkey: self.key(),
+            data: MinerUpdatedData {
+                total_locked_amount: self.as_ref().total_locked_amount,
+            },
+        });
+    }
+}
