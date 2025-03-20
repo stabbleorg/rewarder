@@ -12,6 +12,7 @@ export type GovernoData = {
   minLockDuration: number;
   maxLockDuration: number;
   totalLockedAmount: BN;
+  padding: number[];
 };
 
 export class Governo {
