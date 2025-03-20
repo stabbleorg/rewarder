@@ -44,7 +44,7 @@ export class Pool {
         .div(this.rewarder.data.epochDuration)
         .mul(this.data.totalWeights)
         .div(this.rewarder.data.totalWeights)
-        .muln(10 ** this.rewarder.data.decimals)
+        .mul(new BN(10 ** this.rewarder.data.decimals))
         .div(this.data.totalAmount),
       this.rewarder.data.decimals,
     );
@@ -60,7 +60,7 @@ export class Pool {
         .div(this.rewarder.data.epochDuration)
         .mul(this.data.totalWeights)
         .div(this.rewarder.data.totalWeights)
-        .muln(10 ** this.rewarder.data.decimals)
+        .mul(new BN(10 ** this.rewarder.data.decimals))
         .div(this.data.totalAmount),
       this.rewarder.data.decimals,
     );
@@ -76,7 +76,7 @@ export class Pool {
         .div(this.rewarder.data.epochDuration)
         .mul(this.data.totalWeights)
         .div(this.rewarder.data.totalWeights)
-        .muln(10 ** this.rewarder.data.decimals)
+        .mul(new BN(10 ** this.rewarder.data.decimals))
         .div(this.data.totalAmount),
       this.rewarder.data.decimals,
     );
