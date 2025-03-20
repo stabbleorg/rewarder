@@ -249,17 +249,17 @@
     rpc-websockets "^9.0.2"
     superstruct "^2.0.2"
 
-"@stabbleorg/anchor-contrib@^2.0.0":
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/@stabbleorg/anchor-contrib/-/anchor-contrib-2.0.0.tgz#5c7a063c5a2a048d33bbea660e849fcc27694376"
-  integrity sha512-BB8ahfWErVJoHVk8ReI2m5c8MCUctnLaSozW4V/XCFGIPII2eRpdQ8x1TQblziiYbpghSW7wHAn1NuDEZMnVJg==
+"@stabbleorg/anchor-contrib@^2.0.2":
+  version "2.0.2"
+  resolved "https://registry.yarnpkg.com/@stabbleorg/anchor-contrib/-/anchor-contrib-2.0.2.tgz#14a41984e7f2d8108c02ff3322e5da51c6cb7f4a"
+  integrity sha512-nsO4N50iym9qhf7rKrF2cNrD94D5KPfTPSM8Yfe/K8hQQiLEnhbSRv/YbiYT5t+3WePYvfdEeDawSrNHLIxvOg==
   dependencies:
     "@coral-xyz/anchor" "^0.31.0"
     "@solana/spl-token" "^0.4.13"
     "@solana/web3.js" "^1.98.0"
     bn.js "^5.2.1"
     bs58 "^6.0.0"
-    decimal.js "^10.4.3"
+    decimal.js "^10.5.0"
 
 "@swc/helpers@^0.5.11":
   version "0.5.15"
@@ -689,7 +689,7 @@ decamelize@^4.0.0:
   resolved "https://registry.yarnpkg.com/decamelize/-/decamelize-4.0.0.tgz#aa472d7bf660eb15f3494efd531cab7f2a709837"
   integrity sha512-9iE1PgSik9HeIIw2JO94IidnE3eBoQrFJ3w7sFuzSX4DpmZ3v5sZpUiV5Swcf6mQEF+Y0ru8Neo+p+nyh2J+hQ==
 
-decimal.js@^10.4.3, decimal.js@^10.5.0:
+decimal.js@^10.5.0:
   version "10.5.0"
   resolved "https://registry.yarnpkg.com/decimal.js/-/decimal.js-10.5.0.tgz#0f371c7cf6c4898ce0afb09836db73cd82010f22"
   integrity sha512-8vDa8Qxvr/+d94hSh5P3IJwI5t8/c0KsMp+g8bNw9cY2icONa5aPfvKeieW1WlG0WQYwwhJ7mjui2xtiePQSXw==
