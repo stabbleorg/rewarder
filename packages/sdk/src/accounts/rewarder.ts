@@ -22,6 +22,10 @@ export type RewarderData = {
   parentRewarder: PublicKey | null;
 };
 
+export const ONE_DAY_SECONDS = 86400;
+export const ONE_WEEK_SECONDS = 86400 * 7;
+export const ONE_MONTH_SECONDS = 86400 * 30;
+
 export class Rewarder {
   static REWARDS_PER_WEIGHT_PRECISION: BN = new BN("1000000000");
 
@@ -64,7 +68,25 @@ export class Rewarder {
 
   get dailyRewards(): number {
     return SafeAmount.toUiAmount(
-      this.data.totalRewards.muln(86400).div(this.data.epochDuration),
+      this.data.totalRewards.muln(ONE_DAY_SECONDS).div(this.data.epochDuration),
+      this.data.decimals,
+    );
+  }
+
+  get weeklyRewards(): number {
+    return SafeAmount.toUiAmount(
+      this.data.totalRewards
+        .muln(ONE_WEEK_SECONDS)
+        .div(this.data.epochDuration),
+      this.data.decimals,
+    );
+  }
+
+  get monthlyRewards(): number {
+    return SafeAmount.toUiAmount(
+      this.data.totalRewards
+        .muln(ONE_MONTH_SECONDS)
+        .div(this.data.epochDuration),
       this.data.decimals,
     );
   }

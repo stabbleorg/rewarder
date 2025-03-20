@@ -1,7 +1,12 @@
 import BN from "bn.js";
 import { PublicKey } from "@solana/web3.js";
 import { SafeAmount } from "@stabbleorg/anchor-contrib";
-import { Rewarder } from "./rewarder";
+import {
+  ONE_DAY_SECONDS,
+  ONE_MONTH_SECONDS,
+  ONE_WEEK_SECONDS,
+  Rewarder,
+} from "./rewarder";
 
 export type PoolData = {
   rewarder: PublicKey;
@@ -29,15 +34,50 @@ export class Pool {
       throw new Error("Invalid rewarder");
   }
 
-  get dailyRewards(): number {
+  get dailyRewardsPerAmount(): number {
+    if (this.data.totalAmount.eq(new BN(0))) return 0;
     if (this.rewarder.data.totalWeights.eq(new BN(0))) return 0;
 
     return SafeAmount.toUiAmount(
       this.rewarder.data.totalRewards
-        .muln(86400)
+        .muln(ONE_DAY_SECONDS)
         .div(this.rewarder.data.epochDuration)
         .mul(this.data.totalWeights)
-        .div(this.rewarder.data.totalWeights),
+        .div(this.rewarder.data.totalWeights)
+        .muln(10 ** this.rewarder.data.decimals)
+        .div(this.data.totalAmount),
+      this.rewarder.data.decimals,
+    );
+  }
+
+  get weeklyRewardsPerAmount(): number {
+    if (this.data.totalAmount.eq(new BN(0))) return 0;
+    if (this.rewarder.data.totalWeights.eq(new BN(0))) return 0;
+
+    return SafeAmount.toUiAmount(
+      this.rewarder.data.totalRewards
+        .muln(ONE_WEEK_SECONDS)
+        .div(this.rewarder.data.epochDuration)
+        .mul(this.data.totalWeights)
+        .div(this.rewarder.data.totalWeights)
+        .muln(10 ** this.rewarder.data.decimals)
+        .div(this.data.totalAmount),
+      this.rewarder.data.decimals,
+    );
+  }
+
+  get monthlyRewardsPerAmount(): number {
+    if (this.data.totalAmount.eq(new BN(0))) return 0;
+    if (this.rewarder.data.totalWeights.eq(new BN(0))) return 0;
+
+    return SafeAmount.toUiAmount(
+      this.rewarder.data.totalRewards
+        .muln(ONE_MONTH_SECONDS)
+        .div(this.rewarder.data.epochDuration)
+        .mul(this.data.totalWeights)
+        .div(this.rewarder.data.totalWeights)
+        .muln(10 ** this.rewarder.data.decimals)
+        .div(this.data.totalAmount),
       this.rewarder.data.decimals,
     );
   }
