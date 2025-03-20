@@ -120,7 +120,9 @@ describe("rewarder", () => {
     const pool = await rewarderContext.loadPool(address);
     assert.deepEqual(pool.mintAddress, LP_MINT_KEYPAIR.publicKey);
     assert.equal(pool.weight, 1);
-    assert.equal(pool.dailyRewards, 0);
+    assert.equal(pool.dailyRewardsPerAmount, 0);
+    assert.equal(pool.weeklyRewardsPerAmount, 0);
+    assert.equal(pool.monthlyRewardsPerAmount, 0);
 
     poolAddress = address;
   });
@@ -161,7 +163,9 @@ describe("rewarder", () => {
     const pool = await rewarderContext.loadPool(address);
     assert.deepEqual(pool.mintAddress, VE_MINT_KEYPAIR.publicKey);
     assert.equal(pool.weight, 1);
-    assert.equal(pool.dailyRewards, 0);
+    assert.equal(pool.dailyRewardsPerAmount, 0);
+    assert.equal(pool.weeklyRewardsPerAmount, 0);
+    assert.equal(pool.monthlyRewardsPerAmount, 0);
 
     vePoolAddress = address;
 
