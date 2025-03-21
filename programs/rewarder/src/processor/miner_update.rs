@@ -43,21 +43,23 @@ pub fn process_withdraw_miner(ctx: Context<UpdateMiner>, amount: u64) -> Result<
 }
 
 pub fn process_deposit_derived_miner(ctx: Context<UpdateDerivedMiner>) -> Result<()> {
-    ctx.accounts.with.deposit(ctx.accounts.user_token.amount)?;
+    let amount = ctx.accounts.authority.amount - ctx.accounts.with.miner.amount;
+
+    ctx.accounts.with.deposit(amount)?;
 
     ctx.accounts.authority.authority_seeds(|signer_seed| {
         transfer_checked(
             CpiContext::new(
                 ctx.accounts.token_program.to_account_info(),
                 TransferChecked {
-                    from: ctx.accounts.user_token.to_account_info(),
+                    from: ctx.accounts.authority_token.to_account_info(),
                     mint: ctx.accounts.mint.to_account_info(),
                     to: ctx.accounts.miner_token.to_account_info(),
                     authority: ctx.accounts.authority.to_account_info(),
                 },
             )
             .with_signer(&[signer_seed]),
-            ctx.accounts.user_token.amount,
+            amount,
             ctx.accounts.mint.decimals,
         )
     })
@@ -71,7 +73,7 @@ pub fn process_withdraw_derived_miner(ctx: Context<UpdateDerivedMiner>, amount: 
             CpiContext::new(
                 ctx.accounts.token_program.to_account_info(),
                 TransferChecked {
-                    from: ctx.accounts.user_token.to_account_info(),
+                    from: ctx.accounts.authority_token.to_account_info(),
                     mint: ctx.accounts.mint.to_account_info(),
                     to: ctx.accounts.miner_token.to_account_info(),
                     authority: ctx.accounts.with.miner.to_account_info(),
@@ -159,7 +161,7 @@ pub struct UpdateDerivedMiner<'info> {
         associated_token::mint = mint,
         associated_token::authority = authority,
     )]
-    pub user_token: InterfaceAccount<'info, TokenAccount>,
+    pub authority_token: InterfaceAccount<'info, TokenAccount>,
 
     #[account(mut,
         associated_token::mint = mint,
@@ -173,7 +175,10 @@ pub struct UpdateDerivedMiner<'info> {
 
 impl<'info> Validate<'info> for UpdateDerivedMiner<'info> {
     fn validate(&self) -> Result<()> {
-        assert_eq!(self.user_token.to_account_info().owner.key(), self.token_program.key());
+        assert_eq!(
+            self.authority_token.to_account_info().owner.key(),
+            self.token_program.key()
+        );
         assert_eq!(self.authority.key(), self.with.miner.authority);
         assert_eq!(self.beneficiary.key(), self.with.miner.beneficiary);
         assert_eq!(self.mint.key(), self.with.pool.mint);
