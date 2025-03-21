@@ -371,16 +371,18 @@ export class RewarderContext<
 
   async withdraw({
     pool,
+    derivedPool,
     amount,
     altAccounts,
     priorityLevel,
     maxPriorityMicroLamports,
   }: TransactionArgs<{
     pool: Pool;
+    derivedPool?: Pool;
     amount: string | number;
   }>): Promise<TransactionSignature> {
     return this.sendSmartTransaction(
-      await this.createWithdrawInstructions({ pool, amount }),
+      await this.createWithdrawInstructions({ pool, derivedPool, amount }),
       [],
       altAccounts,
       priorityLevel,
@@ -666,7 +668,7 @@ export class RewarderContext<
         tokenProgramAddress,
       );
 
-      instructions.push(
+      instructions.unshift(
         await this.program.methods
           .withdrawDerivedMiner(
             SafeAmount.toU64Amount(amount, pool.data.decimals),
