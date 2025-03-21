@@ -1,5 +1,6 @@
 import BN from "bn.js";
 import {
+  GetProgramAccountsFilter,
   Keypair,
   PublicKey,
   SystemProgram,
@@ -51,12 +52,36 @@ export class RewarderContext<
     return new Rewarder(rewarderAddress, data);
   }
 
-  async loadRewarders(): Promise<Rewarder[]> {
-    const accounts = await this.program.account.rewarder.all();
+  async loadRewarders(adminAddress?: PublicKey): Promise<Rewarder[]> {
+    const filters: GetProgramAccountsFilter[] = [];
 
-    return accounts.map(
-      (account) => new Rewarder(account.publicKey, account.account),
+    if (adminAddress) {
+      filters.push({
+        memcmp: {
+          offset: 8,
+          bytes: adminAddress.toBase58(),
+        },
+      });
+    }
+
+    const accounts = await this.program.account.rewarder.all(filters);
+
+    const map = new Map(
+      accounts.map(({ publicKey, account }) => [publicKey.toBase58(), account]),
     );
+
+    return accounts.map(({ publicKey, account }) => {
+      const parentData = account.parentRewarder
+        ? map.get(account.parentRewarder.toBase58())
+        : null;
+      return new Rewarder(
+        publicKey,
+        account,
+        parentData
+          ? new Rewarder(account.parentRewarder!, parentData)
+          : undefined,
+      );
+    });
   }
 
   async loadPool(poolAddress: PublicKey, rewarder?: Rewarder): Promise<Pool> {
