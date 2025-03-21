@@ -1,5 +1,5 @@
 import { assert } from "chai";
-import { AnchorError, AnchorProvider } from "@coral-xyz/anchor";
+import { AnchorProvider } from "@coral-xyz/anchor";
 import {
   createAssociatedTokenAccount,
   createMint,
@@ -316,8 +316,10 @@ describe("rewarder", () => {
 
   it("should claim rewards", async () => {
     const pool = await rewarderContext.loadPool(poolAddress);
+    const miner = await rewarderContext.loadMiner(pool);
 
-    const signature = await rewarderContext.claim({ pool });
+    assert.isNotNull(miner);
+    const signature = await rewarderContext.claim({ miners: [miner] });
 
     await provider.connection.confirmTransaction({
       ...(await provider.connection.getLatestBlockhash()),
@@ -325,11 +327,11 @@ describe("rewarder", () => {
     });
 
     const reloadedPool = await rewarderContext.loadPool(poolAddress);
-    const miner = await rewarderContext.loadMiner(reloadedPool);
-    assert.isNotNull(miner);
+    const reloadedMiner = await rewarderContext.loadMiner(reloadedPool);
+    assert.isNotNull(reloadedMiner);
     assert.deepEqual(
-      miner.rewardsClaimed,
-      miner.pool.rewarder.totalRewardsClaimed,
+      reloadedMiner.rewardsClaimed,
+      reloadedMiner.pool.rewarder.totalRewardsClaimed,
     );
   });
 

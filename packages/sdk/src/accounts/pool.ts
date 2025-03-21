@@ -40,7 +40,7 @@ export class Pool {
 
     return SafeAmount.toUiAmount(
       this.rewarder.data.totalRewards
-        .muln(ONE_DAY_SECONDS)
+        .mul(ONE_DAY_SECONDS)
         .div(this.rewarder.data.epochDuration)
         .mul(this.data.totalWeights)
         .div(this.rewarder.data.totalWeights)
@@ -56,7 +56,7 @@ export class Pool {
 
     return SafeAmount.toUiAmount(
       this.rewarder.data.totalRewards
-        .muln(ONE_WEEK_SECONDS)
+        .mul(ONE_WEEK_SECONDS)
         .div(this.rewarder.data.epochDuration)
         .mul(this.data.totalWeights)
         .div(this.rewarder.data.totalWeights)
@@ -72,7 +72,7 @@ export class Pool {
 
     return SafeAmount.toUiAmount(
       this.rewarder.data.totalRewards
-        .muln(ONE_MONTH_SECONDS)
+        .mul(ONE_MONTH_SECONDS)
         .div(this.rewarder.data.epochDuration)
         .mul(this.data.totalWeights)
         .div(this.rewarder.data.totalWeights)

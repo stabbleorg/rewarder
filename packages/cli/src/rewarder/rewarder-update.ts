@@ -8,7 +8,7 @@ export function updateRewarder(program: Command) {
   program
     .command("rewarder-update")
     .description("update the rewarder")
-    .requiredOption("--rewarder-k <string>", "reward mint key", parseKey)
+    .requiredOption("--rewarder-k <string>", "rewarder key", parseKey)
     .requiredOption("--total-rewards <number>", "total rewards")
     .requiredOption("--starts-at <string>", "epoch start time", parseDate)
     .requiredOption("--ends-at <string>", "epoch end time", parseDate)
@@ -46,7 +46,6 @@ export function updateRewarder(program: Command) {
           totalRewards,
           startsAt,
           endsAt,
-          liquidity: false,
           priorityLevel,
         });
 
