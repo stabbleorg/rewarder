@@ -82,6 +82,48 @@ export class Pool {
     );
   }
 
+  get dailyRewards(): number {
+    if (this.data.totalAmount.eq(new BN(0))) return 0;
+    if (this.rewarder.data.totalWeights.eq(new BN(0))) return 0;
+
+    return SafeAmount.toUiAmount(
+      this.rewarder.data.totalRewards
+        .mul(ONE_DAY_SECONDS)
+        .div(this.rewarder.data.epochDuration)
+        .mul(this.data.totalWeights)
+        .div(this.rewarder.data.totalWeights),
+      this.rewarder.data.decimals,
+    );
+  }
+
+  get weeklyRewards(): number {
+    if (this.data.totalAmount.eq(new BN(0))) return 0;
+    if (this.rewarder.data.totalWeights.eq(new BN(0))) return 0;
+
+    return SafeAmount.toUiAmount(
+      this.rewarder.data.totalRewards
+        .mul(ONE_WEEK_SECONDS)
+        .div(this.rewarder.data.epochDuration)
+        .mul(this.data.totalWeights)
+        .div(this.rewarder.data.totalWeights),
+      this.rewarder.data.decimals,
+    );
+  }
+
+  get monthlyRewards(): number {
+    if (this.data.totalAmount.eq(new BN(0))) return 0;
+    if (this.rewarder.data.totalWeights.eq(new BN(0))) return 0;
+
+    return SafeAmount.toUiAmount(
+      this.rewarder.data.totalRewards
+        .mul(ONE_MONTH_SECONDS)
+        .div(this.rewarder.data.epochDuration)
+        .mul(this.data.totalWeights)
+        .div(this.rewarder.data.totalWeights),
+      this.rewarder.data.decimals,
+    );
+  }
+
   get mintAddress(): PublicKey {
     return this.data.mint;
   }
