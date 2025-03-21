@@ -219,7 +219,6 @@ export class RewarderContext<
     totalRewards,
     startsAt,
     endsAt,
-    liquidity = true,
     altAccounts,
     priorityLevel,
     maxPriorityMicroLamports,
@@ -228,7 +227,6 @@ export class RewarderContext<
     totalRewards: string | number;
     startsAt: Date;
     endsAt: Date;
-    liquidity?: boolean;
   }>): Promise<TransactionSignature> {
     return this.sendSmartTransaction(
       [
@@ -241,6 +239,34 @@ export class RewarderContext<
           .accountsStrict({
             admin: this.walletAddress,
             rewarder: rewarder.address,
+          })
+          .instruction(),
+      ],
+      [],
+      altAccounts,
+      priorityLevel,
+      maxPriorityMicroLamports,
+    );
+  }
+
+  async deriveRewarder({
+    rewarderAddress,
+    parentRewarderAddress,
+    altAccounts,
+    priorityLevel,
+    maxPriorityMicroLamports,
+  }: TransactionArgs<{
+    rewarderAddress: PublicKey;
+    parentRewarderAddress: PublicKey;
+  }>): Promise<TransactionSignature> {
+    return this.sendSmartTransaction(
+      [
+        await this.program.methods
+          .deriveRewarder()
+          .accountsStrict({
+            admin: this.walletAddress,
+            rewarder: rewarderAddress,
+            parentRewarder: parentRewarderAddress,
           })
           .instruction(),
       ],
@@ -301,16 +327,41 @@ export class RewarderContext<
 
   async deposit({
     pool,
+    derivedPool,
     amount,
     altAccounts,
     priorityLevel,
     maxPriorityMicroLamports,
   }: TransactionArgs<{
     pool: Pool;
+    derivedPool?: Pool;
     amount: string | number;
   }>): Promise<TransactionSignature> {
     return this.sendSmartTransaction(
-      await this.createDepositInstructions({ pool, amount }),
+      await this.createDepositInstructions({ pool, derivedPool, amount }),
+      [],
+      altAccounts,
+      priorityLevel,
+      maxPriorityMicroLamports,
+    );
+  }
+
+  async deposit2({
+    derivedPool,
+    miner,
+    altAccounts,
+    priorityLevel,
+    maxPriorityMicroLamports,
+  }: TransactionArgs<{
+    derivedPool: Pool;
+    miner: Miner;
+  }>): Promise<TransactionSignature> {
+    return this.sendSmartTransaction(
+      await this.createDepositDerivedInstructions({
+        derivedPool,
+        minerAddress: miner.address,
+        poolAddress: miner.pool.address,
+      }),
       [],
       altAccounts,
       priorityLevel,
@@ -338,15 +389,22 @@ export class RewarderContext<
   }
 
   async claim({
-    pool,
+    miners,
     altAccounts,
     priorityLevel,
     maxPriorityMicroLamports,
   }: TransactionArgs<{
-    pool: Pool;
+    miners: Miner[];
   }>): Promise<TransactionSignature> {
+    const instructions: TransactionInstruction[] = [];
+
+    for (const miner of miners) {
+      const claimInstructions = await this.createClaimInstructions(miner);
+      instructions.push(...claimInstructions);
+    }
+
     return this.sendSmartTransaction(
-      await this.createClaimInstructions({ pool }),
+      instructions,
       [],
       altAccounts,
       priorityLevel,
@@ -356,10 +414,12 @@ export class RewarderContext<
 
   async createDepositInstructions({
     pool,
+    derivedPool,
     amount,
     authorityAddress = this.walletAddress,
   }: {
     pool: Pool;
+    derivedPool?: Pool;
     amount: string | number;
     authorityAddress?: PublicKey;
   }): Promise<TransactionInstruction[]> {
@@ -429,15 +489,121 @@ export class RewarderContext<
         .instruction(),
     );
 
+    if (derivedPool) {
+      const depositDerivedInstructions =
+        await this.createDepositDerivedInstructions({
+          derivedPool,
+          poolAddress: pool.address,
+          minerAddress,
+          minerTokenAddress,
+          tokenProgramAddress,
+        });
+      instructions.push(...depositDerivedInstructions);
+    }
+
+    return instructions;
+  }
+
+  async createDepositDerivedInstructions({
+    derivedPool,
+    minerAddress,
+    poolAddress,
+    minerTokenAddress,
+    tokenProgramAddress,
+  }: {
+    derivedPool: Pool;
+    minerAddress: PublicKey;
+    poolAddress: PublicKey;
+    minerTokenAddress?: PublicKey;
+    tokenProgramAddress?: PublicKey;
+  }): Promise<TransactionInstruction[]> {
+    const instructions: TransactionInstruction[] = [];
+
+    if (!tokenProgramAddress) {
+      const data = await this.provider.connection.getAccountInfo(
+        derivedPool.mintAddress,
+      );
+      tokenProgramAddress = data!.owner;
+    }
+
+    if (!minerTokenAddress) {
+      minerTokenAddress = getAssociatedTokenAddressSync(
+        derivedPool.mintAddress,
+        minerAddress,
+        true,
+        tokenProgramAddress,
+      );
+    }
+
+    const derivedMiner = await this.loadMiner(derivedPool, minerAddress);
+    const derivedMinerAddress = RewarderContext.getMinerAddress(
+      minerAddress,
+      derivedPool.address,
+    );
+
+    if (!derivedMiner) {
+      instructions.push(
+        await this.program.methods
+          .deriveMiner()
+          .accountsStrict({
+            payer: this.walletAddress,
+            authority: minerAddress,
+            authorityPool: poolAddress,
+            miner: derivedMinerAddress,
+            pool: derivedPool.address,
+            rewarder: derivedPool.rewarder.address,
+            systemProgram: SystemProgram.programId,
+          })
+          .instruction(),
+      );
+
+      const { instruction } =
+        await this.getOrCreateAssociatedTokenAddressInstruction(
+          derivedPool.mintAddress,
+          derivedMinerAddress,
+          true,
+          tokenProgramAddress,
+        );
+      if (instruction) instructions.push(instruction);
+    }
+
+    const derivedMinerTokenAddress = getAssociatedTokenAddressSync(
+      derivedPool.mintAddress,
+      derivedMinerAddress,
+      true,
+      tokenProgramAddress,
+    );
+
+    instructions.push(
+      await this.program.methods
+        .depositDerivedMiner()
+        .accountsStrict({
+          with: {
+            miner: derivedMinerAddress,
+            pool: derivedPool.address,
+            rewarder: derivedPool.rewarder.address,
+          },
+          beneficiary: this.walletAddress,
+          authority: minerAddress,
+          mint: derivedPool.mintAddress,
+          authorityToken: minerTokenAddress,
+          minerToken: derivedMinerTokenAddress,
+          tokenProgram: tokenProgramAddress,
+        })
+        .instruction(),
+    );
+
     return instructions;
   }
 
   async createWithdrawInstructions({
     pool,
+    derivedPool,
     amount,
     authorityAddress = this.walletAddress,
   }: {
     pool: Pool;
+    derivedPool?: Pool;
     amount: string | number;
     authorityAddress?: PublicKey;
   }): Promise<TransactionInstruction[]> {
@@ -487,40 +653,66 @@ export class RewarderContext<
         .instruction(),
     );
 
+    if (derivedPool) {
+      const derivedMinerAddress = RewarderContext.getMinerAddress(
+        minerAddress,
+        derivedPool.address,
+      );
+
+      const derivedMinerTokenAddress = getAssociatedTokenAddressSync(
+        pool.mintAddress, // = derivedPool.mintAddress
+        derivedMinerAddress,
+        true,
+        tokenProgramAddress,
+      );
+
+      instructions.push(
+        await this.program.methods
+          .withdrawDerivedMiner(
+            SafeAmount.toU64Amount(amount, pool.data.decimals),
+          )
+          .accountsStrict({
+            with: {
+              miner: derivedMinerAddress,
+              pool: derivedPool.address,
+              rewarder: derivedPool.rewarder.address,
+            },
+            beneficiary: this.walletAddress,
+            authority: minerAddress,
+            mint: derivedPool.mintAddress,
+            authorityToken: minerTokenAddress,
+            minerToken: derivedMinerTokenAddress,
+            tokenProgram: tokenProgramAddress,
+          })
+          .instruction(),
+      );
+    }
+
     return instructions;
   }
 
-  async createClaimInstructions({
-    pool,
-    authorityAddress = this.walletAddress,
-  }: {
-    pool: Pool;
-    authorityAddress?: PublicKey;
-  }): Promise<TransactionInstruction[]> {
+  async createClaimInstructions(
+    miner: Miner,
+  ): Promise<TransactionInstruction[]> {
     const instructions: TransactionInstruction[] = [];
 
     const data = await this.provider.connection.getAccountInfo(
-      pool.rewarder.mintAddress,
+      miner.pool.rewarder.mintAddress,
     );
     const tokenProgramAddress = data!.owner;
 
-    const minerAddress = RewarderContext.getMinerAddress(
-      authorityAddress,
-      pool.address,
-    );
-
     const { address: userTokenAddress, instruction: createUserAtaIX } =
       await this.getOrCreateAssociatedTokenAddressInstruction(
-        pool.rewarder.mintAddress,
-        authorityAddress,
+        miner.pool.rewarder.mintAddress,
+        miner.beneficiaryAddress,
         true,
         tokenProgramAddress,
       );
     if (createUserAtaIX) instructions.push(createUserAtaIX);
 
     const rewarderTokenAddress = getAssociatedTokenAddressSync(
-      pool.rewarder.mintAddress,
-      pool.rewarder.authorityAddress,
+      miner.pool.rewarder.mintAddress,
+      miner.pool.rewarder.authorityAddress,
       true,
       tokenProgramAddress,
     );
@@ -530,13 +722,13 @@ export class RewarderContext<
         .claimMiner()
         .accountsStrict({
           with: {
-            miner: minerAddress,
-            pool: pool.address,
-            rewarder: pool.rewarder.address,
+            miner: miner.address,
+            pool: miner.pool.address,
+            rewarder: miner.pool.rewarder.address,
           },
           beneficiary: this.walletAddress,
-          rewarderAuthority: pool.rewarder.authorityAddress,
-          mint: pool.rewarder.mintAddress,
+          rewarderAuthority: miner.pool.rewarder.authorityAddress,
+          mint: miner.pool.rewarder.mintAddress,
           userToken: userTokenAddress,
           rewarderToken: rewarderTokenAddress,
           tokenProgram: tokenProgramAddress,

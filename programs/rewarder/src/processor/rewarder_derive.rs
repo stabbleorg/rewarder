@@ -20,7 +20,7 @@ pub struct DeriveRewarder<'info> {
 
 impl<'info> Validate<'info> for DeriveRewarder<'info> {
     fn validate(&self) -> Result<()> {
-        assert_eq!(self.rewarder.num_pools, 0);
+        assert_eq!(self.rewarder.total_weights, 0);
         assert_ne!(self.rewarder.key(), self.parent_rewarder.key());
 
         if self.rewarder.parent_rewarder.is_some() {

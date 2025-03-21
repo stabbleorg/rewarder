@@ -49,7 +49,7 @@ export class Miner {
 
       if (this.pool.rewarder.data.totalWeights.gt(new BN(0))) {
         rewardsPerWeight = this.pool.rewarder.data.totalRewards
-          .muln(elapsedTime)
+          .mul(new BN(elapsedTime))
           .div(this.pool.rewarder.data.epochDuration)
           .mul(Rewarder.REWARDS_PER_WEIGHT_PRECISION)
           .div(this.pool.rewarder.data.totalWeights)
