@@ -73,9 +73,9 @@ pub fn process_withdraw_derived_miner(ctx: Context<UpdateDerivedMiner>, amount: 
             CpiContext::new(
                 ctx.accounts.token_program.to_account_info(),
                 TransferChecked {
-                    from: ctx.accounts.authority_token.to_account_info(),
+                    from: ctx.accounts.miner_token.to_account_info(),
                     mint: ctx.accounts.mint.to_account_info(),
-                    to: ctx.accounts.miner_token.to_account_info(),
+                    to: ctx.accounts.authority_token.to_account_info(),
                     authority: ctx.accounts.with.miner.to_account_info(),
                 },
             )
