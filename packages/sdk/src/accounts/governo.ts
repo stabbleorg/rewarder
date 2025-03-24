@@ -12,6 +12,7 @@ export type GovernoData = {
   minLockDuration: number;
   maxLockDuration: number;
   totalLockedAmount: BN;
+  totalVotingWeight: BN;
   padding: number[];
 };
 
@@ -36,6 +37,13 @@ export class Governo {
   get totalLockedAmount(): number {
     return SafeAmount.toUiAmount(
       this.data.totalLockedAmount,
+      this.data.decimals,
+    );
+  }
+
+  get totalVotingWeight(): number {
+    return SafeAmount.toUiAmount(
+      this.data.totalVotingWeight,
       this.data.decimals,
     );
   }

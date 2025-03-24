@@ -25,7 +25,9 @@ pub struct Governo {
 
     pub total_locked_amount: u64,
 
-    pub padding: [u8; 128],
+    pub total_voting_weight: u64,
+
+    pub padding: [u8; 120],
 }
 
 impl Governo {
@@ -52,6 +54,7 @@ where
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct GovernoUpdatedData {
     pub total_locked_amount: u64,
+    pub total_voting_weight: u64,
 }
 
 #[event]
@@ -73,6 +76,7 @@ where
             pubkey: self.key(),
             data: GovernoUpdatedData {
                 total_locked_amount: self.as_ref().total_locked_amount,
+                total_voting_weight: self.as_ref().total_voting_weight,
             },
         });
     }
