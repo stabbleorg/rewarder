@@ -7,7 +7,7 @@ import { GovernoContext } from "../programs";
 export type LockerData = {
   governo: PublicKey;
   authority: PublicKey;
-  authorityBump: number;
+  // authorityBump: number;
   lockedAmount: BN;
   votingWeight: BN;
   votingWeightUsed: BN;

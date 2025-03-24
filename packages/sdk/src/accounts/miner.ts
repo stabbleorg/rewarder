@@ -9,7 +9,7 @@ export type MinerData = {
   pool: PublicKey;
   authority: PublicKey;
   beneficiary: PublicKey;
-  bump: number;
+  // bump: number;
   amount: BN;
   rewardsDebt: BN;
   rewardsCredit: BN;
