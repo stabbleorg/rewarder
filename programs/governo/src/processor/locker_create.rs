@@ -26,6 +26,7 @@ pub fn process_create_locker(ctx: Context<CreateLocker>, amount: u64, duration: 
         .unwrap();
 
     ctx.accounts.governo.total_locked_amount += amount;
+    ctx.accounts.governo.total_voting_weight += ve_amount;
     ctx.accounts.governo.emit_governo_updated();
 
     let timestamp = Clock::get()?.unix_timestamp;
@@ -40,6 +41,7 @@ pub fn process_create_locker(ctx: Context<CreateLocker>, amount: u64, duration: 
         locked_at: timestamp,
         unlocks_at: timestamp + duration as i64,
     });
+    ctx.accounts.locker.emit_locker_created();
 
     transfer_checked(
         CpiContext::new(
