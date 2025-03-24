@@ -88,6 +88,7 @@ export class GovernoContext<
     altAccounts,
     priorityLevel,
     maxPriorityMicroLamports,
+    simulate,
   }: TransactionArgs<{
     mintAddress: PublicKey;
     minLockDuration: number;
@@ -201,6 +202,7 @@ export class GovernoContext<
       altAccounts,
       priorityLevel,
       maxPriorityMicroLamports,
+      simulate,
     );
 
     return { address, signature };
@@ -215,6 +217,7 @@ export class GovernoContext<
     altAccounts,
     priorityLevel,
     maxPriorityMicroLamports,
+    simulate,
   }: TransactionArgs<{
     pool: Pool;
     governo: Governo;
@@ -338,6 +341,7 @@ export class GovernoContext<
       altAccounts,
       priorityLevel,
       maxPriorityMicroLamports,
+      simulate,
     );
 
     return { address, signature };
@@ -349,6 +353,7 @@ export class GovernoContext<
     altAccounts,
     priorityLevel,
     maxPriorityMicroLamports,
+    simulate,
   }: TransactionArgs<{
     pool: Pool;
     locker: Locker;
@@ -428,6 +433,7 @@ export class GovernoContext<
       altAccounts,
       priorityLevel,
       maxPriorityMicroLamports,
+      simulate,
     );
   }
 
@@ -437,6 +443,7 @@ export class GovernoContext<
     altAccounts,
     priorityLevel,
     maxPriorityMicroLamports,
+    simulate,
   }: TransactionArgs<{
     miner: Miner;
     locker: Locker;
@@ -488,6 +495,7 @@ export class GovernoContext<
       altAccounts,
       priorityLevel,
       maxPriorityMicroLamports,
+      simulate,
     );
   }
 

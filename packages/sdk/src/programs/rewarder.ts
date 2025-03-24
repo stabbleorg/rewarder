@@ -159,6 +159,7 @@ export class RewarderContext<
     altAccounts,
     priorityLevel,
     maxPriorityMicroLamports,
+    simulate,
   }: TransactionArgs<{
     mintAddress: PublicKey;
     totalRewards: string | number;
@@ -234,6 +235,7 @@ export class RewarderContext<
       altAccounts,
       priorityLevel,
       maxPriorityMicroLamports,
+      simulate,
     );
 
     return { address, signature };
@@ -247,6 +249,7 @@ export class RewarderContext<
     altAccounts,
     priorityLevel,
     maxPriorityMicroLamports,
+    simulate,
   }: TransactionArgs<{
     rewarder: Rewarder;
     totalRewards: string | number;
@@ -271,6 +274,7 @@ export class RewarderContext<
       altAccounts,
       priorityLevel,
       maxPriorityMicroLamports,
+      simulate,
     );
   }
 
@@ -280,6 +284,7 @@ export class RewarderContext<
     altAccounts,
     priorityLevel,
     maxPriorityMicroLamports,
+    simulate,
   }: TransactionArgs<{
     rewarderAddress: PublicKey;
     parentRewarderAddress: PublicKey;
@@ -299,6 +304,7 @@ export class RewarderContext<
       altAccounts,
       priorityLevel,
       maxPriorityMicroLamports,
+      simulate,
     );
   }
 
@@ -310,6 +316,7 @@ export class RewarderContext<
     altAccounts,
     priorityLevel,
     maxPriorityMicroLamports,
+    simulate,
   }: TransactionArgs<{
     rewarderAddress: PublicKey;
     mintAddress: PublicKey;
@@ -345,6 +352,7 @@ export class RewarderContext<
       altAccounts,
       priorityLevel,
       maxPriorityMicroLamports,
+      simulate,
     );
 
     return { address, signature };
@@ -357,6 +365,7 @@ export class RewarderContext<
     altAccounts,
     priorityLevel,
     maxPriorityMicroLamports,
+    simulate,
   }: TransactionArgs<{
     pool: Pool;
     derivedPool?: Pool;
@@ -368,6 +377,7 @@ export class RewarderContext<
       altAccounts,
       priorityLevel,
       maxPriorityMicroLamports,
+      simulate,
     );
   }
 
@@ -377,6 +387,7 @@ export class RewarderContext<
     altAccounts,
     priorityLevel,
     maxPriorityMicroLamports,
+    simulate,
   }: TransactionArgs<{
     derivedPool: Pool;
     miner: Miner;
@@ -391,6 +402,7 @@ export class RewarderContext<
       altAccounts,
       priorityLevel,
       maxPriorityMicroLamports,
+      simulate,
     );
   }
 
@@ -401,6 +413,7 @@ export class RewarderContext<
     altAccounts,
     priorityLevel,
     maxPriorityMicroLamports,
+    simulate,
   }: TransactionArgs<{
     pool: Pool;
     derivedPool?: Pool;
@@ -412,6 +425,7 @@ export class RewarderContext<
       altAccounts,
       priorityLevel,
       maxPriorityMicroLamports,
+      simulate,
     );
   }
 
@@ -420,6 +434,7 @@ export class RewarderContext<
     altAccounts,
     priorityLevel,
     maxPriorityMicroLamports,
+    simulate,
   }: TransactionArgs<{
     miners: Miner[];
   }>): Promise<TransactionSignature> {
@@ -436,6 +451,7 @@ export class RewarderContext<
       altAccounts,
       priorityLevel,
       maxPriorityMicroLamports,
+      simulate,
     );
   }
 
@@ -789,6 +805,7 @@ export class RewarderListener {
   private rewardsPerWeightUpdatedEvent: number = -1;
   private poolUpdatedEvent: number = -1;
   private rewardsPerAmountUpdatedEvent: number = -1;
+  private minerCreatedEvent: number = -1;
   private minerUpdatedEvent: number = -1;
 
   constructor(readonly program: RewarderProgram) {}
@@ -858,9 +875,31 @@ export class RewarderListener {
   }
 
   addMinerListeners(
-    callback: (event: DataUpdatedEvent<Partial<MinerData>>) => void,
+    callback: (event: DataUpdatedEvent<Partial<MinerData> | MinerData>) => void,
   ) {
     this.removeMinerListeners();
+
+    this.minerCreatedEvent = this.program.addEventListener(
+      "minerCreatedEvent",
+      (
+        event: DataUpdatedEvent<Partial<MinerData>>,
+        _slot: number,
+        signature: TransactionSignature,
+      ) => {
+        if (signature !== SIMULATED_SIGNATURE) {
+          callback({
+            pubkey: event.pubkey,
+            data: {
+              ...event.data,
+              amount: new BN(0),
+              rewardsDebt: new BN(0),
+              rewardsCredit: new BN(0),
+              rewardsClaimed: new BN(0),
+            },
+          });
+        }
+      },
+    );
 
     this.minerUpdatedEvent = this.program.addEventListener(
       "minerUpdatedEvent",
@@ -901,6 +940,11 @@ export class RewarderListener {
   }
 
   removeMinerListeners() {
+    if (this.minerCreatedEvent !== -1) {
+      this.program.removeEventListener(this.minerCreatedEvent);
+      this.minerCreatedEvent = -1;
+    }
+
     if (this.minerUpdatedEvent !== -1) {
       this.program.removeEventListener(this.minerUpdatedEvent);
       this.minerUpdatedEvent = -1;

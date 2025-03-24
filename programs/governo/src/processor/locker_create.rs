@@ -41,6 +41,7 @@ pub fn process_create_locker(ctx: Context<CreateLocker>, amount: u64, duration: 
         locked_at: timestamp,
         unlocks_at: timestamp + duration as i64,
     });
+    ctx.accounts.locker.emit_locker_created();
 
     transfer_checked(
         CpiContext::new(

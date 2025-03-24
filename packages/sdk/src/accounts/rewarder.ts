@@ -7,7 +7,7 @@ export type RewarderData = {
   admin: PublicKey;
   mint: PublicKey;
   decimals: number;
-  authorityBump: number;
+  // authorityBump: number;
   cumulativeRewards: BN;
   totalRewards: BN;
   totalRewardsClaimed: BN;
