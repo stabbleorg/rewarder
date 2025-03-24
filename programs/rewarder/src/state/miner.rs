@@ -51,6 +51,39 @@ where
 }
 
 #[derive(AnchorSerialize, AnchorDeserialize)]
+pub struct MinerCreatedData {
+    pub pool: Pubkey,
+    pub authority: Pubkey,
+    pub beneficiary: Pubkey,
+}
+
+#[event]
+pub struct MinerCreatedEvent {
+    pub pubkey: Pubkey,
+    pub data: MinerCreatedData,
+}
+
+pub trait EmitMinerCreated {
+    fn emit_miner_created(&self);
+}
+
+impl<T> EmitMinerCreated for T
+where
+    T: Located<Miner>,
+{
+    fn emit_miner_created(&self) {
+        emit!(MinerCreatedEvent {
+            pubkey: self.key(),
+            data: MinerCreatedData {
+                pool: self.as_ref().pool,
+                authority: self.as_ref().authority,
+                beneficiary: self.as_ref().beneficiary,
+            },
+        });
+    }
+}
+
+#[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct MinerUpdatedData {
     pub amount: u64,
     pub rewards_debt: u64,

@@ -2,6 +2,8 @@ use crate::state::*;
 use anchor_lang::prelude::*;
 
 pub fn process_create_miner(ctx: Context<CreateMiner>, user: Pubkey) -> Result<()> {
+    ctx.accounts.pool.num_miners += 1;
+
     ctx.accounts.miner.set_inner(Miner {
         pool: ctx.accounts.pool.key(),
         authority: user,
@@ -12,8 +14,7 @@ pub fn process_create_miner(ctx: Context<CreateMiner>, user: Pubkey) -> Result<(
         rewards_credit: 0,
         rewards_claimed: 0,
     });
-
-    ctx.accounts.pool.num_miners += 1;
+    ctx.accounts.miner.emit_miner_created();
 
     Ok(())
 }

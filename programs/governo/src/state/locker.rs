@@ -48,3 +48,44 @@ where
         ])
     }
 }
+
+#[derive(AnchorSerialize, AnchorDeserialize)]
+pub struct LockerCreatedData {
+    pub governo: Pubkey,
+    pub authority: Pubkey,
+    pub locked_amount: u64,
+    pub voting_weight: u64,
+    pub voting_weight_used: u64,
+    pub locked_at: i64,
+    pub unlocks_at: i64,
+}
+
+#[event]
+pub struct LockerCreatedEvent {
+    pub pubkey: Pubkey,
+    pub data: LockerCreatedData,
+}
+
+pub trait EmitLockerCreated {
+    fn emit_locker_created(&self);
+}
+
+impl<T> EmitLockerCreated for T
+where
+    T: Located<Locker>,
+{
+    fn emit_locker_created(&self) {
+        emit!(LockerCreatedEvent {
+            pubkey: self.key(),
+            data: LockerCreatedData {
+                governo: self.as_ref().governo,
+                authority: self.as_ref().authority,
+                locked_amount: self.as_ref().locked_amount,
+                voting_weight: self.as_ref().voting_weight,
+                voting_weight_used: self.as_ref().voting_weight_used,
+                locked_at: self.as_ref().locked_at,
+                unlocks_at: self.as_ref().unlocks_at,
+            },
+        });
+    }
+}

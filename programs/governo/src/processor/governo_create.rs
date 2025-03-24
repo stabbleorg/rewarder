@@ -20,7 +20,8 @@ pub fn process_create_governo(
         min_lock_duration,
         max_lock_duration,
         total_locked_amount: 0,
-        padding: [0; 128],
+        total_voting_weight: 0,
+        padding: [0; 120],
     });
 
     Ok(())
