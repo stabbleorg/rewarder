@@ -8,7 +8,7 @@ export type GovernoData = {
   govMint: PublicKey;
   veMint: PublicKey;
   decimals: number;
-  authorityBump: number;
+  // authorityBump: number;
   minLockDuration: number;
   maxLockDuration: number;
   totalLockedAmount: BN;
