@@ -10,5 +10,3 @@ test-ledger
 .yarn
 *.log
 *.so
-
-*.sh
