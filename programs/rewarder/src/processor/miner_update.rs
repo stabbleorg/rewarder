@@ -1,10 +1,13 @@
 use crate::state::*;
-use anchor_common::validate::Validate;
+use anchor_common::{token::get_transfer_fee, validate::Validate};
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{transfer_checked, Mint, TokenAccount, TransferChecked};
 
 pub fn process_deposit_miner(ctx: Context<UpdateMiner>, amount: u64) -> Result<()> {
-    ctx.accounts.with.deposit(amount)?;
+    let transfer_fee = get_transfer_fee(&ctx.accounts.mint.to_account_info(), amount, Clock::get()?.epoch)?;
+    let post_fee_amount = amount.saturating_sub(transfer_fee);
+
+    ctx.accounts.with.deposit(post_fee_amount)?;
 
     transfer_checked(
         CpiContext::new(
@@ -45,7 +48,10 @@ pub fn process_withdraw_miner(ctx: Context<UpdateMiner>, amount: u64) -> Result<
 pub fn process_deposit_derived_miner(ctx: Context<UpdateDerivedMiner>) -> Result<()> {
     let amount = ctx.accounts.authority.amount - ctx.accounts.with.miner.amount;
 
-    ctx.accounts.with.deposit(amount)?;
+    let transfer_fee = get_transfer_fee(&ctx.accounts.mint.to_account_info(), amount, Clock::get()?.epoch)?;
+    let post_fee_amount = amount.saturating_sub(transfer_fee);
+
+    ctx.accounts.with.deposit(post_fee_amount)?;
 
     ctx.accounts.authority.authority_seeds(|signer_seed| {
         transfer_checked(
