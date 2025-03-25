@@ -1,4 +1,4 @@
-use crate::state::*;
+use crate::{error::*, state::*};
 use anchor_common::{token::is_supported_mint, validate::Validate};
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::Mint;
@@ -38,7 +38,7 @@ pub struct CreatePool<'info> {
 
 impl<'info> Validate<'info> for CreatePool<'info> {
     fn validate(&self) -> Result<()> {
-        assert!(is_supported_mint(&self.mint).unwrap());
+        require!(is_supported_mint(&self.mint).unwrap(), RewarderError::NotSupportedMint);
 
         Ok(())
     }

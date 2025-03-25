@@ -1,4 +1,4 @@
-use crate::state::*;
+use crate::{error::GovernoError, state::*};
 use anchor_common::validate::Validate;
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{
@@ -9,8 +9,16 @@ use math::fixed_math::{FixedDiv, FixedMul, FixedPow};
 const MULTIPLIER_BASE: u64 = 1_050_000_000;
 
 pub fn process_create_locker(ctx: Context<CreateLocker>, amount: u64, duration: u32) -> Result<()> {
-    require_gte!(duration, ctx.accounts.governo.min_lock_duration);
-    require_gte!(ctx.accounts.governo.max_lock_duration, duration);
+    require_gte!(
+        duration,
+        ctx.accounts.governo.min_lock_duration,
+        GovernoError::MinLockDuration
+    );
+    require_gte!(
+        ctx.accounts.governo.max_lock_duration,
+        duration,
+        GovernoError::MaxLockDuration
+    );
 
     // amount * 1.05 ^ n
     let ve_amount = amount
