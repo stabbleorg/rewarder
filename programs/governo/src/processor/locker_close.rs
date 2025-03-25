@@ -1,4 +1,4 @@
-use crate::state::*;
+use crate::{error::GovernoError, state::*};
 use anchor_common::validate::Validate;
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{
@@ -131,7 +131,11 @@ impl<'info> Validate<'info> for CloseLocker<'info> {
         assert_eq!(self.ve_mint.to_account_info().owner.key(), self.token_program.key());
 
         require_gte!(self.locker_ve_token.amount, self.locker.voting_weight);
-        require_gte!(Clock::get()?.unix_timestamp, self.locker.unlocks_at);
+        require_gte!(
+            Clock::get()?.unix_timestamp,
+            self.locker.unlocks_at,
+            GovernoError::LockerActive
+        );
 
         Ok(())
     }
