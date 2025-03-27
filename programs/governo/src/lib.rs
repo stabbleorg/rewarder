@@ -39,7 +39,7 @@ pub mod governo {
         process_unstake_locker(ctx)
     }
 
-    pub fn claim_locker(ctx: Context<ClaimLocker>) -> Result<()> {
+    pub fn claim_locker<'a, 'b, 'c, 'info>(ctx: Context<'_, '_, '_, 'info, ClaimLocker<'info>>) -> Result<()> {
         process_claim_locker(ctx)
     }
 }

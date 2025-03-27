@@ -70,7 +70,7 @@ pub fn process_unstake_locker(ctx: Context<UpdateLocker>) -> Result<()> {
     })
 }
 
-pub fn process_claim_locker(ctx: Context<ClaimLocker>) -> Result<()> {
+pub fn process_claim_locker<'a, 'b, 'c, 'info>(ctx: Context<'_, '_, '_, 'info, ClaimLocker<'info>>) -> Result<()> {
     ctx.accounts.locker.authority_seeds(|signer_seed| {
         claim_miner(
             CpiContext::new(
@@ -89,7 +89,8 @@ pub fn process_claim_locker(ctx: Context<ClaimLocker>) -> Result<()> {
                     token_program: ctx.accounts.token_program.to_account_info(),
                 },
             )
-            .with_signer(&[signer_seed]),
+            .with_signer(&[signer_seed])
+            .with_remaining_accounts(ctx.remaining_accounts.to_vec()),
         )
     })
 }
