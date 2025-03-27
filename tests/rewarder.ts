@@ -336,6 +336,8 @@ describe("rewarder", () => {
   });
 
   it("should claim locker rewards", async () => {
+    await sleep(2_000);
+
     const governo = await governoContext.loadGoverno(governoAddress);
     const lockers = await governoContext.loadLockers(governo);
     const locker = lockers[0];

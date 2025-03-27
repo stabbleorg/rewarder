@@ -3,6 +3,7 @@ import { createRewarder } from "./rewarder-create";
 import { updateRewarder } from "./rewarder-update";
 import { deriveRewarder } from "./rewarder-derive";
 import { createPool } from "./pool-create";
+import { updatePool } from "./pool-update";
 import { withdrawMiner } from "./miner-withdraw";
 import { fetchPools } from "./pool-fetch";
 
@@ -11,6 +12,7 @@ export const setupRewarderProgram = (program: Command) => {
   updateRewarder(program);
   deriveRewarder(program);
   createPool(program);
+  updatePool(program);
   withdrawMiner(program);
   fetchPools(program);
 };

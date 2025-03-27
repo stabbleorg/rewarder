@@ -26,6 +26,10 @@ export class Locker {
     return GovernoContext.getLockerAuthorityAddress(this.address);
   }
 
+  get ownerAddress(): PublicKey {
+    return this.data.authority;
+  }
+
   get lockedAmount(): number {
     return SafeAmount.toUiAmount(
       this.data.lockedAmount,

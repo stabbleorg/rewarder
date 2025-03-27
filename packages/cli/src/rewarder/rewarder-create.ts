@@ -27,7 +27,7 @@ export function createRewarder(program: Command) {
         endsAt: Date;
         rewarderKP?: Keypair;
       }) => {
-        const { provider, priorityLevel } = useContext();
+        const { provider, priorityLevel, simulate } = useContext();
 
         const rewarderContext = new RewarderContext(provider);
 
@@ -39,6 +39,7 @@ export function createRewarder(program: Command) {
           liquidity: false,
           keypair: rewarderKP,
           priorityLevel,
+          simulate,
         });
 
         console.log("Rewarder:", address.toBase58());
