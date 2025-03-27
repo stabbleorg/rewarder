@@ -34,6 +34,9 @@ import { type Rewarder as IDLType } from "../generated/rewarder";
 import IDL from "../generated/idl/rewarder.json";
 
 export const REWARDER_PROGRAM_ID = new PublicKey(IDL.address);
+export const REWARDER_ERRORS = new Map(
+  IDL.errors.map((error) => [error.code, error.msg]),
+);
 
 export type RewarderProgram = Program<IDLType>;
 

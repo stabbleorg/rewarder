@@ -36,6 +36,9 @@ import REWARDER_PROGRAM_IDL from "../generated/idl/rewarder.json";
 import { REWARDER_PROGRAM_ID, RewarderContext } from "./rewarder";
 
 export const GOVERNO_PROGRAM_ID = new PublicKey(IDL.address);
+export const GOVERNO_ERRORS = new Map(
+  IDL.errors.map((error) => [error.code, error.msg]),
+);
 
 export type GovernoProgram = Program<IDLType>;
 
