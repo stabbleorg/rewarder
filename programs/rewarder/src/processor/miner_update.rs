@@ -1,4 +1,4 @@
-use crate::state::*;
+use crate::{error::*, state::*};
 use anchor_common::{token::get_transfer_fee, validate::Validate};
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{transfer_checked, Mint, TokenAccount, TransferChecked};
@@ -108,16 +108,29 @@ pub fn process_withdraw_derived_miner(ctx: Context<UpdateDerivedMiner>, amount: 
     })
 }
 
-pub fn process_claim_miner(ctx: Context<ClaimMiner>) -> Result<()> {
+pub fn process_claim_miner<'a, 'b, 'c, 'info>(ctx: Context<'_, '_, '_, 'info, ClaimMiner<'info>>) -> Result<()> {
     let rewards_claimed = ctx.accounts.with.miner.rewards_claimed;
 
-    ctx.accounts.with.claim()?;
+    ctx.accounts
+        .with
+        .claim()
+        .map_err(|_| RewarderError::NoClaimableRewards)?;
 
     let amount = ctx.accounts.with.miner.rewards_claimed - rewards_claimed;
 
     ctx.accounts.with.rewarder.total_rewards_claimed += amount;
 
     ctx.accounts.with.emit_updated();
+
+    if ctx.accounts.with.miner.amount == 0 && ctx.remaining_accounts.len() > 0 {
+        ctx.accounts.with.miner.close(ctx.remaining_accounts[0].clone())?;
+
+        if amount == 0 {
+            return Ok(());
+        }
+    } else {
+        require_gt!(amount, 0, RewarderError::NoClaimableRewards);
+    }
 
     ctx.accounts.with.rewarder.authority_seeds(|signer_seed| {
         transfer_checked(
