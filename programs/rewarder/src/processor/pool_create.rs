@@ -38,7 +38,7 @@ pub struct CreatePool<'info> {
 
 impl<'info> Validate<'info> for CreatePool<'info> {
     fn validate(&self) -> Result<()> {
-        require!(is_supported_mint(&self.mint).unwrap(), RewarderError::NotSupportedMint);
+        require!(is_supported_mint(&self.mint).unwrap(), RewarderError::UnsupportedMint);
 
         Ok(())
     }

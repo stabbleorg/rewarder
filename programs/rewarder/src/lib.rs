@@ -75,7 +75,7 @@ pub mod rewarder {
     }
 
     #[access_control(ctx.accounts.validate())]
-    pub fn claim_miner(ctx: Context<ClaimMiner>) -> Result<()> {
+    pub fn claim_miner<'a, 'b, 'c, 'info>(ctx: Context<'_, '_, '_, 'info, ClaimMiner<'info>>) -> Result<()> {
         process_claim_miner(ctx)
     }
 }
