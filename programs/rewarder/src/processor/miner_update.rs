@@ -51,6 +51,8 @@ pub fn process_deposit_derived_miner(ctx: Context<UpdateDerivedMiner>) -> Result
     let transfer_fee = get_transfer_fee(&ctx.accounts.mint.to_account_info(), amount, Clock::get()?.epoch)?;
     let post_fee_amount = amount.saturating_sub(transfer_fee);
 
+    ctx.accounts.authority.amount -= transfer_fee;
+
     ctx.accounts.with.deposit(post_fee_amount)?;
 
     ctx.accounts.authority.authority_seeds(|signer_seed| {
@@ -72,6 +74,10 @@ pub fn process_deposit_derived_miner(ctx: Context<UpdateDerivedMiner>) -> Result
 }
 
 pub fn process_withdraw_derived_miner(ctx: Context<UpdateDerivedMiner>, amount: u64) -> Result<()> {
+    let transfer_fee = get_transfer_fee(&ctx.accounts.mint.to_account_info(), amount, Clock::get()?.epoch)?;
+
+    ctx.accounts.authority.amount -= transfer_fee;
+
     ctx.accounts.with.withdraw(amount)?;
 
     ctx.accounts.with.miner.authority_seeds(|signer_seed| {
@@ -159,6 +165,7 @@ pub struct UpdateDerivedMiner<'info> {
 
     pub beneficiary: Signer<'info>,
 
+    #[account(mut)]
     pub authority: Account<'info, Miner>,
 
     pub mint: InterfaceAccount<'info, Mint>,
