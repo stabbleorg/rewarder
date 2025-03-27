@@ -44,6 +44,10 @@ export class Rewarder {
     return RewarderContext.getRewarderAuthorityAddress(this.address);
   }
 
+  get adminAddress(): PublicKey {
+    return this.data.admin;
+  }
+
   get mintAddress(): PublicKey {
     return this.data.mint;
   }

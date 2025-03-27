@@ -1,5 +1,6 @@
 import BN from "bn.js";
 import {
+  AccountMeta,
   GetProgramAccountsFilter,
   Keypair,
   PublicKey,
@@ -356,6 +357,36 @@ export class RewarderContext<
     );
 
     return { address, signature };
+  }
+
+  async updatePool({
+    pool,
+    weight,
+    altAccounts,
+    priorityLevel,
+    maxPriorityMicroLamports,
+    simulate,
+  }: TransactionArgs<{
+    pool: Pool;
+    weight: number;
+  }>): Promise<TransactionSignature> {
+    return this.sendSmartTransaction(
+      [
+        await this.program.methods
+          .updatePool(Math.trunc(weight * 10000))
+          .accountsStrict({
+            admin: pool.rewarder.adminAddress,
+            pool: pool.address,
+            rewarder: pool.rewarder.address,
+          })
+          .instruction(),
+      ],
+      [],
+      altAccounts,
+      priorityLevel,
+      maxPriorityMicroLamports,
+      simulate,
+    );
   }
 
   async deposit({
@@ -738,6 +769,15 @@ export class RewarderContext<
     miner: Miner,
   ): Promise<TransactionInstruction[]> {
     const instructions: TransactionInstruction[] = [];
+    const remainingAccounts: AccountMeta[] = [];
+
+    if (!miner.amount) {
+      remainingAccounts.push({
+        pubkey: this.walletAddress,
+        isSigner: false,
+        isWritable: true,
+      });
+    }
 
     const data = await this.provider.connection.getAccountInfo(
       miner.pool.rewarder.mintAddress,
@@ -769,13 +809,14 @@ export class RewarderContext<
             pool: miner.pool.address,
             rewarder: miner.pool.rewarder.address,
           },
-          beneficiary: this.walletAddress,
+          beneficiary: miner.beneficiaryAddress,
           rewarderAuthority: miner.pool.rewarder.authorityAddress,
           mint: miner.pool.rewarder.mintAddress,
           userToken: userTokenAddress,
           rewarderToken: rewarderTokenAddress,
           tokenProgram: tokenProgramAddress,
         })
+        .remainingAccounts(remainingAccounts)
         .instruction(),
     );
 
