@@ -11,7 +11,7 @@ export function withdrawMiner(program: Command) {
     .requiredOption("--mint-k <string>", "Mint key to unstake", parseKey)
     .requiredOption("--amount <number>", "Amount to unstake")
     .action(async ({ mintK, amount }: { mintK: PublicKey; amount: string }) => {
-      const { provider, priorityLevel } = useContext();
+      const { provider, priorityLevel, simulate } = useContext();
 
       const rewarderContext = new RewarderContext(provider);
 
@@ -46,6 +46,7 @@ export function withdrawMiner(program: Command) {
         derivedPool: derivedMiner?.pool,
         amount,
         priorityLevel,
+        simulate,
       });
 
       console.log(signature);

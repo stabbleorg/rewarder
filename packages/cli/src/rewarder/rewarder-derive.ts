@@ -22,7 +22,7 @@ export function deriveRewarder(program: Command) {
         rewarderK: PublicKey;
         parentRewarderK: PublicKey;
       }) => {
-        const { provider, priorityLevel } = useContext();
+        const { provider, priorityLevel, simulate } = useContext();
 
         const rewarderContext = new RewarderContext(provider);
 
@@ -30,6 +30,7 @@ export function deriveRewarder(program: Command) {
           rewarderAddress: rewarderK,
           parentRewarderAddress: parentRewarderK,
           priorityLevel,
+          simulate,
         });
 
         console.log(signature);
