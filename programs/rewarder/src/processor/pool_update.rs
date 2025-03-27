@@ -4,6 +4,8 @@ use anchor_lang::prelude::*;
 pub fn process_update_pool(ctx: Context<UpdatePool>, weight: u32) -> Result<()> {
     assert_ne!(weight, ctx.accounts.pool.weight);
 
+    ctx.accounts.pool.weight = weight;
+
     let current_time = Clock::get()?.unix_timestamp;
 
     if current_time > ctx.accounts.rewarder.last_updated_at {
