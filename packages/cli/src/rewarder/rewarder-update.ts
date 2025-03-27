@@ -38,7 +38,6 @@ export function updateRewarder(program: Command) {
           console.log("Total weights:", rewarder.totalWeights);
           console.log("Starts at:", rewarder.startsAt);
           console.log("Ends at:", rewarder.endsAt);
-          return;
         }
 
         const signature = await rewarderContext.updateRewarder({
@@ -47,6 +46,7 @@ export function updateRewarder(program: Command) {
           startsAt,
           endsAt,
           priorityLevel,
+          simulate,
         });
 
         console.log(signature);
