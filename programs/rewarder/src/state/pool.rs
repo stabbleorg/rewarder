@@ -41,15 +41,27 @@ impl Pool {
 
     pub fn refresh_rewards_per_amount(&mut self, rewards_per_weight: u128) -> Result<()> {
         if self.total_amount > 0 {
-            let rewards_distributed = rewards_per_weight * self.total_weights / Rewarder::REWARDS_PER_WEIGHT_PRECISION
-                + self.total_rewards_credit as u128
-                - self.total_rewards_debt as u128;
-            let rewards_per_amount = (rewards_distributed - self.total_rewards_distributed as u128)
-                * Pool::REWARDS_PER_AMOUNT_PRECISION
-                / self.total_amount as u128;
+            let total_rewards_credit = rewards_per_weight * self.total_weights / Rewarder::REWARDS_PER_WEIGHT_PRECISION
+                + self.total_rewards_credit as u128;
 
-            self.rewards_per_amount += rewards_per_amount;
-            self.total_rewards_distributed = u64::try_from(rewards_distributed).unwrap();
+            let total_rewards_debt = self.total_rewards_debt as u128;
+
+            if total_rewards_credit > total_rewards_debt {
+                let rewards_distributed = total_rewards_credit - total_rewards_debt;
+
+                let total_rewards_distributed = self.total_rewards_distributed as u128;
+
+                if rewards_distributed > total_rewards_distributed {
+                    let rewards_per_amount = (rewards_distributed - total_rewards_distributed)
+                        * Pool::REWARDS_PER_AMOUNT_PRECISION
+                        / self.total_amount as u128;
+
+                    if rewards_per_amount > 0 {
+                        self.rewards_per_amount += rewards_per_amount;
+                        self.total_rewards_distributed = u64::try_from(rewards_distributed).unwrap();
+                    }
+                }
+            }
         }
 
         Ok(())

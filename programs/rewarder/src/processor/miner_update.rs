@@ -46,16 +46,17 @@ pub fn process_withdraw_miner(ctx: Context<UpdateMiner>, amount: u64) -> Result<
 }
 
 pub fn process_deposit_derived_miner(ctx: Context<UpdateDerivedMiner>) -> Result<()> {
-    let amount = ctx.accounts.authority.amount - ctx.accounts.with.miner.amount;
+    let amount = ctx.accounts.with.miner.amount - ctx.accounts.with_derived.miner.amount;
 
     let transfer_fee = get_transfer_fee(&ctx.accounts.mint.to_account_info(), amount, Clock::get()?.epoch)?;
+    if transfer_fee > 0 {
+        ctx.accounts.with.withdraw(transfer_fee)?;
+    }
+
     let post_fee_amount = amount.saturating_sub(transfer_fee);
+    ctx.accounts.with_derived.deposit(post_fee_amount)?;
 
-    ctx.accounts.authority.amount -= transfer_fee;
-
-    ctx.accounts.with.deposit(post_fee_amount)?;
-
-    ctx.accounts.authority.authority_seeds(|signer_seed| {
+    ctx.accounts.with.miner.authority_seeds(|signer_seed| {
         transfer_checked(
             CpiContext::new(
                 ctx.accounts.token_program.to_account_info(),
@@ -63,7 +64,7 @@ pub fn process_deposit_derived_miner(ctx: Context<UpdateDerivedMiner>) -> Result
                     from: ctx.accounts.authority_token.to_account_info(),
                     mint: ctx.accounts.mint.to_account_info(),
                     to: ctx.accounts.miner_token.to_account_info(),
-                    authority: ctx.accounts.authority.to_account_info(),
+                    authority: ctx.accounts.with.miner.to_account_info(),
                 },
             )
             .with_signer(&[signer_seed]),
@@ -75,12 +76,13 @@ pub fn process_deposit_derived_miner(ctx: Context<UpdateDerivedMiner>) -> Result
 
 pub fn process_withdraw_derived_miner(ctx: Context<UpdateDerivedMiner>, amount: u64) -> Result<()> {
     let transfer_fee = get_transfer_fee(&ctx.accounts.mint.to_account_info(), amount, Clock::get()?.epoch)?;
+    if transfer_fee > 0 {
+        ctx.accounts.with.withdraw(transfer_fee)?;
+    }
 
-    ctx.accounts.authority.amount -= transfer_fee;
+    ctx.accounts.with_derived.withdraw(amount)?;
 
-    ctx.accounts.with.withdraw(amount)?;
-
-    ctx.accounts.with.miner.authority_seeds(|signer_seed| {
+    ctx.accounts.with_derived.miner.authority_seeds(|signer_seed| {
         transfer_checked(
             CpiContext::new(
                 ctx.accounts.token_program.to_account_info(),
@@ -88,7 +90,7 @@ pub fn process_withdraw_derived_miner(ctx: Context<UpdateDerivedMiner>, amount: 
                     from: ctx.accounts.miner_token.to_account_info(),
                     mint: ctx.accounts.mint.to_account_info(),
                     to: ctx.accounts.authority_token.to_account_info(),
-                    authority: ctx.accounts.with.miner.to_account_info(),
+                    authority: ctx.accounts.with_derived.miner.to_account_info(),
                 },
             )
             .with_signer(&[signer_seed]),
@@ -162,23 +164,21 @@ impl<'info> Validate<'info> for UpdateMiner<'info> {
 #[derive(Accounts)]
 pub struct UpdateDerivedMiner<'info> {
     pub with: WithMiner<'info>,
+    pub with_derived: WithMiner<'info>,
 
     pub beneficiary: Signer<'info>,
-
-    #[account(mut)]
-    pub authority: Account<'info, Miner>,
 
     pub mint: InterfaceAccount<'info, Mint>,
 
     #[account(mut,
         associated_token::mint = mint,
-        associated_token::authority = authority,
+        associated_token::authority = with.miner,
     )]
     pub authority_token: InterfaceAccount<'info, TokenAccount>,
 
     #[account(mut,
         associated_token::mint = mint,
-        associated_token::authority = with.miner,
+        associated_token::authority = with_derived.miner,
     )]
     pub miner_token: InterfaceAccount<'info, TokenAccount>,
 
@@ -192,9 +192,9 @@ impl<'info> Validate<'info> for UpdateDerivedMiner<'info> {
             self.authority_token.to_account_info().owner.key(),
             self.token_program.key()
         );
-        assert_eq!(self.authority.key(), self.with.miner.authority);
-        assert_eq!(self.beneficiary.key(), self.with.miner.beneficiary);
-        assert_eq!(self.mint.key(), self.with.pool.mint);
+        assert_eq!(self.with.miner.key(), self.with_derived.miner.authority);
+        assert_eq!(self.beneficiary.key(), self.with_derived.miner.beneficiary);
+        assert_eq!(self.mint.key(), self.with_derived.pool.mint);
 
         Ok(())
     }
