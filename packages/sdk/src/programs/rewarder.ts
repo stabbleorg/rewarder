@@ -431,6 +431,7 @@ export class RewarderContext<
         derivedPool,
         minerAddress: miner.address,
         poolAddress: miner.pool.address,
+        rewarderAddress: miner.pool.rewarder.address,
       }),
       [],
       altAccounts,
@@ -570,8 +571,9 @@ export class RewarderContext<
       const depositDerivedInstructions =
         await this.createDepositDerivedInstructions({
           derivedPool,
-          poolAddress: pool.address,
           minerAddress,
+          poolAddress: pool.address,
+          rewarderAddress: pool.rewarder.address,
           minerTokenAddress,
           tokenProgramAddress,
         });
@@ -585,12 +587,14 @@ export class RewarderContext<
     derivedPool,
     minerAddress,
     poolAddress,
+    rewarderAddress,
     minerTokenAddress,
     tokenProgramAddress,
   }: {
     derivedPool: Pool;
     minerAddress: PublicKey;
     poolAddress: PublicKey;
+    rewarderAddress: PublicKey;
     minerTokenAddress?: PublicKey;
     tokenProgramAddress?: PublicKey;
   }): Promise<TransactionInstruction[]> {
@@ -656,12 +660,16 @@ export class RewarderContext<
         .depositDerivedMiner()
         .accountsStrict({
           with: {
+            miner: minerAddress,
+            pool: poolAddress,
+            rewarder: rewarderAddress,
+          },
+          withDerived: {
             miner: derivedMinerAddress,
             pool: derivedPool.address,
             rewarder: derivedPool.rewarder.address,
           },
           beneficiary: this.walletAddress,
-          authority: minerAddress,
           mint: derivedPool.mintAddress,
           authorityToken: minerTokenAddress,
           minerToken: derivedMinerTokenAddress,
@@ -750,12 +758,16 @@ export class RewarderContext<
           )
           .accountsStrict({
             with: {
+              miner: minerAddress,
+              pool: pool.address,
+              rewarder: pool.rewarder.address,
+            },
+            withDerived: {
               miner: derivedMinerAddress,
               pool: derivedPool.address,
               rewarder: derivedPool.rewarder.address,
             },
             beneficiary: this.walletAddress,
-            authority: minerAddress,
             mint: derivedPool.mintAddress,
             authorityToken: minerTokenAddress,
             minerToken: derivedMinerTokenAddress,
