@@ -111,12 +111,9 @@ pub fn process_withdraw_derived_miner(ctx: Context<UpdateDerivedMiner>, amount: 
 pub fn process_claim_miner<'a, 'b, 'c, 'info>(ctx: Context<'_, '_, '_, 'info, ClaimMiner<'info>>) -> Result<()> {
     let rewards_claimed = ctx.accounts.with.miner.rewards_claimed;
 
-    ctx.accounts
-        .with
-        .claim()
-        .map_err(|_| RewarderError::NoClaimableRewards)?;
+    ctx.accounts.with.claim()?;
 
-    let amount = ctx.accounts.with.miner.rewards_claimed - rewards_claimed;
+    let amount = ctx.accounts.with.miner.rewards_claimed.saturating_sub(rewards_claimed);
 
     ctx.accounts.with.rewarder.total_rewards_claimed += amount;
 
@@ -336,12 +333,15 @@ impl<'info> WithMiner<'info> {
     pub fn claim(&mut self) -> Result<()> {
         self.refresh()?;
 
-        self.miner.rewards_claimed = u64::try_from(
+        let rewards_before_debt = u64::try_from(
             self.pool.rewards_per_amount * self.miner.amount as u128 / Pool::REWARDS_PER_AMOUNT_PRECISION,
         )
         .unwrap()
-            + self.miner.rewards_credit
-            - self.miner.rewards_debt;
+            + self.miner.rewards_credit;
+
+        if rewards_before_debt > self.miner.rewards_debt {
+            self.miner.rewards_claimed = rewards_before_debt.saturating_sub(self.miner.rewards_debt);
+        }
 
         Ok(())
     }
