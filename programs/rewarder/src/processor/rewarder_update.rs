@@ -12,15 +12,21 @@ pub fn process_update_rewarder(
     require_gt!(epoch_starts_at, current_time);
     require_gt!(epoch_ends_at, epoch_starts_at);
 
-    if current_time > ctx.accounts.rewarder.last_updated_at {
+    let last_updated_time = if ctx.accounts.rewarder.total_weights > 0 {
+        current_time
+    } else {
+        ctx.accounts.rewarder.last_updated_at
+    };
+
+    if last_updated_time > ctx.accounts.rewarder.epoch_starts_at {
         ctx.accounts.rewarder.refresh_rewards_per_weight(current_time)?;
 
-        if current_time >= ctx.accounts.rewarder.epoch_ends_at {
+        if last_updated_time >= ctx.accounts.rewarder.epoch_ends_at {
             ctx.accounts.rewarder.cumulative_rewards += ctx.accounts.rewarder.total_rewards;
         } else {
             let rewards_distributed = u64::try_from(
                 ctx.accounts.rewarder.total_rewards as u128
-                    * (current_time - ctx.accounts.rewarder.epoch_starts_at) as u128
+                    * (last_updated_time - ctx.accounts.rewarder.epoch_starts_at) as u128
                     / ctx.accounts.rewarder.epoch_duration as u128,
             )
             .unwrap();

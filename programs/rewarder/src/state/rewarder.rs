@@ -68,8 +68,8 @@ impl Rewarder {
             let rewards_per_weight = rewards_accrued * Rewarder::REWARDS_PER_WEIGHT_PRECISION / self.total_weights;
 
             self.rewards_per_weight += rewards_per_weight;
-            self.last_updated_at = last_updated_at;
         }
+        self.last_updated_at = last_updated_at;
 
         Ok(())
     }
