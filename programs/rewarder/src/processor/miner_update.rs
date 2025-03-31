@@ -1,7 +1,10 @@
 use crate::{error::*, state::*};
 use anchor_common::{token::get_transfer_fee, validate::Validate};
 use anchor_lang::prelude::*;
-use anchor_spl::token_interface::{transfer_checked, Mint, TokenAccount, TransferChecked};
+use anchor_spl::{
+    token::{close_account, CloseAccount},
+    token_interface::{transfer_checked, Mint, TokenAccount, TransferChecked},
+};
 
 pub fn process_deposit_miner(ctx: Context<UpdateMiner>, amount: u64) -> Result<()> {
     let transfer_fee = get_transfer_fee(&ctx.accounts.mint.to_account_info(), amount, Clock::get()?.epoch)?;
@@ -114,13 +117,33 @@ pub fn process_claim_miner<'a, 'b, 'c, 'info>(ctx: Context<'_, '_, '_, 'info, Cl
     ctx.accounts.with.claim()?;
 
     let amount = ctx.accounts.with.miner.rewards_claimed.saturating_sub(rewards_claimed);
+    require_gte!(ctx.accounts.rewarder_token.amount, amount, );
 
     ctx.accounts.with.rewarder.total_rewards_claimed += amount;
 
     ctx.accounts.with.emit_updated();
 
     if ctx.accounts.with.miner.amount == 0 && ctx.remaining_accounts.len() > 0 {
-        ctx.accounts.with.miner.close(ctx.remaining_accounts[0].clone())?;
+        if ctx.remaining_accounts.len() > 2 {
+            ctx.accounts.with.miner.authority_seeds(|signer_seed| {
+                close_account(
+                    CpiContext::new(
+                        ctx.remaining_accounts[2].to_account_info(),
+                        CloseAccount {
+                            account: ctx.remaining_accounts[1].to_account_info(),
+                            authority: ctx.accounts.with.miner.to_account_info(),
+                            destination: ctx.remaining_accounts[0].to_account_info(),
+                        },
+                    )
+                    .with_signer(&[signer_seed]),
+                )
+            })?;
+        }
+
+        ctx.accounts
+            .with
+            .miner
+            .close(ctx.remaining_accounts[0].to_account_info())?;
 
         if amount == 0 {
             return Ok(());
@@ -281,6 +304,9 @@ impl<'info> WithMiner<'info> {
     }
 
     pub fn deposit(&mut self, amount: u64) -> Result<()> {
+        require_gt!(amount, 0, RewarderError::DepositAmountZero);
+        require_gt!(self.pool.weight, 0, RewarderError::RewardPoolEmpty);
+
         self.refresh()?;
 
         let weights = self.pool.weight as u128 * amount as u128;

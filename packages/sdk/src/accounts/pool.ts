@@ -132,6 +132,18 @@ export class Pool {
     return this.data.weight;
   }
 
+  get shares(): number {
+    if (this.rewarder.totalWeights === 0) {
+      return 1;
+    }
+
+    return this.totalWeights / this.rewarder.totalWeights;
+  }
+
+  get sharesPerAmount(): number {
+    return this.shares / this.totalAmount;
+  }
+
   get totalAmount(): number {
     return SafeAmount.toUiAmount(this.data.totalAmount, this.data.decimals);
   }

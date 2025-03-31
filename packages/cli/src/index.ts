@@ -14,11 +14,11 @@ import { setContext } from "./context";
 import { parseKeypair } from "./utils";
 
 program
-  .version("0.8.0")
+  .version("0.8.2")
   .option("-k, --keypair <path>", "wallet keypair", parseKeypair)
   .option("-u, --url <string>", "RPC monk or url", "devnet")
-  .option("-p, --priority-level <string...>", "priority fee level", "High")
   .option("-a, --alt-keys <string...>", "Address Lookup Table keys")
+  .option("-p, --priority-level <string>", "priority fee level", "High")
   .option("-s, --simulate", "simulate transaction")
   .hook("preAction", async (cmd: Command) => {
     const { keypair, url, priorityLevel, altKeys, simulate } = cmd.opts();
