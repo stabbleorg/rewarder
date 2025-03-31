@@ -1,5 +1,9 @@
 import BN from "bn.js";
 import { PublicKey } from "@solana/web3.js";
+import {
+  getAssociatedTokenAddressSync,
+  TOKEN_PROGRAM_ID,
+} from "@solana/spl-token";
 import { SafeAmount } from "@stabbleorg/anchor-contrib";
 import { RewarderContext } from "../programs";
 
@@ -103,5 +107,17 @@ export class Rewarder {
 
   get endsAt(): Date {
     return new Date(this.data.epochEndsAt.toNumber() * 1000);
+  }
+
+  getAssociatedTokenAddress(
+    mintAddress: PublicKey,
+    programId: PublicKey = TOKEN_PROGRAM_ID,
+  ): PublicKey {
+    return getAssociatedTokenAddressSync(
+      mintAddress,
+      this.authorityAddress,
+      true,
+      programId,
+    );
   }
 }
