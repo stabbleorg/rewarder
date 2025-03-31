@@ -370,10 +370,8 @@ export class GovernoContext<
       pool.address,
     );
 
-    const lockerVeTokenAddress = getAssociatedTokenAddressSync(
+    const lockerVeTokenAddress = locker.getAssociatedTokenAddress(
       locker.governo.veMintAddress,
-      locker.authorityAddress,
-      true,
     );
 
     const minerVeTokenAddress = getAssociatedTokenAddressSync(
@@ -407,10 +405,8 @@ export class GovernoContext<
       );
     if (createUserGovAtaIX) instructions.push(createUserGovAtaIX);
 
-    const lockerGovTokenAddress = getAssociatedTokenAddressSync(
+    const lockerGovTokenAddress = locker.getAssociatedTokenAddress(
       locker.governo.govMintAddress,
-      locker.authorityAddress,
-      true,
     );
 
     instructions.push(
@@ -461,11 +457,23 @@ export class GovernoContext<
     const remainingAccounts: AccountMeta[] = [];
 
     if (!miner.amount) {
-      remainingAccounts.push({
-        pubkey: this.walletAddress,
-        isSigner: false,
-        isWritable: true,
-      });
+      remainingAccounts.push(
+        {
+          pubkey: this.walletAddress,
+          isSigner: false,
+          isWritable: true,
+        },
+        {
+          pubkey: miner.getAssociatedTokenAddress(miner.pool.mintAddress),
+          isSigner: false,
+          isWritable: true,
+        },
+        {
+          pubkey: TOKEN_PROGRAM_ID,
+          isSigner: false,
+          isWritable: false,
+        },
+      );
     }
 
     const {
@@ -477,11 +485,10 @@ export class GovernoContext<
     if (createAuthorityRewardAtaIX)
       instructions.push(createAuthorityRewardAtaIX);
 
-    const rewarderRewardTokenAddress = getAssociatedTokenAddressSync(
-      miner.pool.rewarder.mintAddress,
-      miner.pool.rewarder.authorityAddress,
-      true,
-    );
+    const rewarderRewardTokenAddress =
+      miner.pool.rewarder.getAssociatedTokenAddress(
+        miner.pool.rewarder.mintAddress,
+      );
 
     instructions.push(
       await this.program.methods

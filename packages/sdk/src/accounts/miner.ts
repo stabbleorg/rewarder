@@ -1,5 +1,9 @@
 import BN from "bn.js";
 import { PublicKey } from "@solana/web3.js";
+import {
+  getAssociatedTokenAddressSync,
+  TOKEN_PROGRAM_ID,
+} from "@solana/spl-token";
 import { SafeAmount } from "@stabbleorg/anchor-contrib";
 import { Pool } from "./pool";
 import { RewarderContext } from "../programs";
@@ -26,6 +30,10 @@ export class Miner {
 
   get address(): PublicKey {
     return RewarderContext.getMinerAddress(this.data.authority, this.data.pool);
+  }
+
+  get authorityAddress(): PublicKey {
+    return this.data.authority;
   }
 
   get beneficiaryAddress(): PublicKey {
@@ -84,6 +92,18 @@ export class Miner {
     return SafeAmount.toUiAmount(
       this.data.rewardsClaimed,
       this.pool.rewarder.data.decimals,
+    );
+  }
+
+  getAssociatedTokenAddress(
+    mintAddress: PublicKey,
+    programId: PublicKey = TOKEN_PROGRAM_ID,
+  ): PublicKey {
+    return getAssociatedTokenAddressSync(
+      mintAddress,
+      this.address,
+      true,
+      programId,
     );
   }
 }

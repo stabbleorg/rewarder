@@ -787,11 +787,31 @@ export class RewarderContext<
     const remainingAccounts: AccountMeta[] = [];
 
     if (!miner.amount) {
-      remainingAccounts.push({
-        pubkey: this.walletAddress,
-        isSigner: false,
-        isWritable: true,
-      });
+      const mint = await this.provider.connection.getAccountInfo(
+        miner.pool.mintAddress,
+      );
+      const tokenProgramId = mint!.owner;
+
+      remainingAccounts.push(
+        {
+          pubkey: this.walletAddress,
+          isSigner: false,
+          isWritable: true,
+        },
+        {
+          pubkey: miner.getAssociatedTokenAddress(
+            miner.pool.mintAddress,
+            tokenProgramId,
+          ),
+          isSigner: false,
+          isWritable: true,
+        },
+        {
+          pubkey: tokenProgramId,
+          isSigner: false,
+          isWritable: false,
+        },
+      );
     }
 
     const data = await this.provider.connection.getAccountInfo(
@@ -808,10 +828,8 @@ export class RewarderContext<
       );
     if (createUserAtaIX) instructions.push(createUserAtaIX);
 
-    const rewarderTokenAddress = getAssociatedTokenAddressSync(
+    const rewarderTokenAddress = miner.pool.rewarder.getAssociatedTokenAddress(
       miner.pool.rewarder.mintAddress,
-      miner.pool.rewarder.authorityAddress,
-      true,
       tokenProgramAddress,
     );
 
