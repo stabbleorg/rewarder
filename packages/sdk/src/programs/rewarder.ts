@@ -807,6 +807,11 @@ export class RewarderContext<
           isWritable: true,
         },
         {
+          pubkey: miner.pool.mintAddress,
+          isSigner: false,
+          isWritable: true,
+        },
+        {
           pubkey: tokenProgramId,
           isSigner: false,
           isWritable: false,
