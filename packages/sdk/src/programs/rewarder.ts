@@ -376,7 +376,7 @@ export class RewarderContext<
     return this.sendSmartTransaction(
       [
         await this.program.methods
-          .updatePool(Math.trunc(weight * 10000))
+          .updatePool(weight)
           .accountsStrict({
             admin: pool.rewarder.adminAddress,
             pool: pool.address,
