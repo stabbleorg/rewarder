@@ -151,7 +151,8 @@ pub fn process_claim_miner<'a, 'b, 'c, 'info>(ctx: Context<'_, '_, '_, 'info, Cl
                                 from: token_account_account.to_account_info(),
                                 authority: ctx.accounts.with.miner.to_account_info(),
                             },
-                        ),
+                        )
+                        .with_signer(&[signer_seed]),
                         token_account.amount,
                         mint.decimals,
                     )?;
