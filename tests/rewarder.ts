@@ -42,7 +42,7 @@ describe("rewarder", () => {
       PAYER_KEYPAIR,
       PAYER_KEYPAIR.publicKey,
       null,
-      6,
+      9,
       REWARD_MINT_KEYPAIR,
     );
     await mintTo(
@@ -56,7 +56,7 @@ describe("rewarder", () => {
         provider.publicKey,
       ),
       PAYER_KEYPAIR,
-      BigInt("1000000000000"), // 1M
+      BigInt("1000000000000000"), // 1M
     );
 
     await createMint(
@@ -84,7 +84,7 @@ describe("rewarder", () => {
 
   it("should create a rewarder", async () => {
     const time = Date.now();
-    const totalRewards = 500000; // 500K
+    const totalRewards = 1000000; // 1M
 
     const { address, signature } = await rewarderContext.createRewarder({
       mintAddress: REWARD_MINT_KEYPAIR.publicKey,
@@ -109,7 +109,7 @@ describe("rewarder", () => {
     const { address, signature } = await rewarderContext.createPool({
       rewarderAddress,
       mintAddress: LP_MINT_KEYPAIR.publicKey,
-      weight: 1,
+      weight: 1000000,
     });
 
     await provider.connection.confirmTransaction({
@@ -119,7 +119,7 @@ describe("rewarder", () => {
 
     const pool = await rewarderContext.loadPool(address);
     assert.deepEqual(pool.mintAddress, LP_MINT_KEYPAIR.publicKey);
-    assert.equal(pool.weight, 1);
+    assert.equal(pool.weight, 1000000);
     assert.equal(pool.dailyRewardsPerAmount, 0);
     assert.equal(pool.weeklyRewardsPerAmount, 0);
     assert.equal(pool.monthlyRewardsPerAmount, 0);
@@ -152,7 +152,7 @@ describe("rewarder", () => {
     const { address, signature } = await rewarderContext.createPool({
       rewarderAddress,
       mintAddress: VE_MINT_KEYPAIR.publicKey,
-      weight: 1,
+      weight: 1000000,
     });
 
     await provider.connection.confirmTransaction({
@@ -162,7 +162,7 @@ describe("rewarder", () => {
 
     const pool = await rewarderContext.loadPool(address);
     assert.deepEqual(pool.mintAddress, VE_MINT_KEYPAIR.publicKey);
-    assert.equal(pool.weight, 1);
+    assert.equal(pool.weight, 1000000);
     assert.equal(pool.dailyRewardsPerAmount, 0);
     assert.equal(pool.weeklyRewardsPerAmount, 0);
     assert.equal(pool.monthlyRewardsPerAmount, 0);

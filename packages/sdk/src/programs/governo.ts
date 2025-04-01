@@ -469,6 +469,11 @@ export class GovernoContext<
           isWritable: true,
         },
         {
+          pubkey: miner.pool.mintAddress,
+          isSigner: false,
+          isWritable: true,
+        },
+        {
           pubkey: TOKEN_PROGRAM_ID,
           isSigner: false,
           isWritable: false,
