@@ -376,7 +376,7 @@ export class RewarderContext<
     return this.sendSmartTransaction(
       [
         await this.program.methods
-          .updatePool(Math.trunc(weight * 10000))
+          .updatePool(weight)
           .accountsStrict({
             admin: pool.rewarder.adminAddress,
             pool: pool.address,
@@ -803,6 +803,11 @@ export class RewarderContext<
             miner.pool.mintAddress,
             tokenProgramId,
           ),
+          isSigner: false,
+          isWritable: true,
+        },
+        {
+          pubkey: miner.pool.mintAddress,
           isSigner: false,
           isWritable: true,
         },

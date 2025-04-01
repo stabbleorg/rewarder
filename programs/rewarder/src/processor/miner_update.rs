@@ -1,9 +1,11 @@
 use crate::{error::*, state::*};
-use anchor_common::{token::get_transfer_fee, validate::Validate};
+use anchor_common::{
+    token::{get_transfer_fee, try_deserialize_mint, try_deserialize_token_account},
+    validate::Validate,
+};
 use anchor_lang::prelude::*;
-use anchor_spl::{
-    token::{close_account, CloseAccount},
-    token_interface::{transfer_checked, Mint, TokenAccount, TransferChecked},
+use anchor_spl::token_interface::{
+    burn_checked, close_account, transfer_checked, BurnChecked, CloseAccount, Mint, TokenAccount, TransferChecked,
 };
 
 pub fn process_deposit_miner(ctx: Context<UpdateMiner>, amount: u64) -> Result<()> {
@@ -117,7 +119,11 @@ pub fn process_claim_miner<'a, 'b, 'c, 'info>(ctx: Context<'_, '_, '_, 'info, Cl
     ctx.accounts.with.claim()?;
 
     let amount = ctx.accounts.with.miner.rewards_claimed.saturating_sub(rewards_claimed);
-    require_gte!(ctx.accounts.rewarder_token.amount, amount, );
+    require_gte!(
+        ctx.accounts.rewarder_token.amount,
+        amount,
+        RewarderError::InsufficientFaucet
+    );
 
     ctx.accounts.with.rewarder.total_rewards_claimed += amount;
 
@@ -125,14 +131,39 @@ pub fn process_claim_miner<'a, 'b, 'c, 'info>(ctx: Context<'_, '_, '_, 'info, Cl
 
     if ctx.accounts.with.miner.amount == 0 && ctx.remaining_accounts.len() > 0 {
         if ctx.remaining_accounts.len() > 2 {
+            let rent_collector = &ctx.remaining_accounts[0];
+            let token_account_account = &ctx.remaining_accounts[1];
+            let mint_account = &ctx.remaining_accounts[2];
+            let token_program = &ctx.remaining_accounts[3];
+
+            assert_eq!(mint_account.key(), ctx.accounts.with.pool.mint);
+
             ctx.accounts.with.miner.authority_seeds(|signer_seed| {
+                let token_account = try_deserialize_token_account(token_account_account)?;
+                let mint = try_deserialize_mint(mint_account)?;
+
+                if token_account.amount > 0 {
+                    burn_checked(
+                        CpiContext::new(
+                            token_program.to_account_info(),
+                            BurnChecked {
+                                mint: mint_account.to_account_info(),
+                                from: token_account_account.to_account_info(),
+                                authority: ctx.accounts.with.miner.to_account_info(),
+                            },
+                        ),
+                        token_account.amount,
+                        mint.decimals,
+                    )?;
+                }
+
                 close_account(
                     CpiContext::new(
-                        ctx.remaining_accounts[2].to_account_info(),
+                        token_program.to_account_info(),
                         CloseAccount {
-                            account: ctx.remaining_accounts[1].to_account_info(),
+                            account: token_account_account.to_account_info(),
                             authority: ctx.accounts.with.miner.to_account_info(),
-                            destination: ctx.remaining_accounts[0].to_account_info(),
+                            destination: rent_collector.to_account_info(),
                         },
                     )
                     .with_signer(&[signer_seed]),
@@ -144,6 +175,7 @@ pub fn process_claim_miner<'a, 'b, 'c, 'info>(ctx: Context<'_, '_, '_, 'info, Cl
             .with
             .miner
             .close(ctx.remaining_accounts[0].to_account_info())?;
+        ctx.accounts.with.pool.num_miners -= 1;
 
         if amount == 0 {
             return Ok(());
