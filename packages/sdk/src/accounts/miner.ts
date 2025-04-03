@@ -77,13 +77,17 @@ export class Miner {
       }
     }
 
+    const rewardsClaimable = rewardsPerAmount
+      .mul(this.data.amount)
+      .div(Pool.REWARDS_PER_AMOUNT_PRECISION)
+      .add(this.data.rewardsCredit)
+      .sub(this.data.rewardsDebt)
+      .sub(this.data.rewardsClaimed);
+
+    if (rewardsClaimable.lte(new BN(0))) return 0;
+
     return SafeAmount.toUiAmount(
-      rewardsPerAmount
-        .mul(this.data.amount)
-        .div(Pool.REWARDS_PER_AMOUNT_PRECISION)
-        .add(this.data.rewardsCredit)
-        .sub(this.data.rewardsDebt)
-        .sub(this.data.rewardsClaimed),
+      rewardsClaimable,
       this.pool.rewarder.data.decimals,
     );
   }
