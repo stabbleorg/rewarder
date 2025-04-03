@@ -61,7 +61,7 @@ export function fetchRewarder(program: Command) {
               return [
                 pool.address.toBase58(),
                 asset.content?.metadata.symbol, // pool.mintAddress.toBase58(),
-                (pool.totalAmount / supply * 100).toFixed(2) + "%",
+                ((pool.totalAmount / supply) * 100).toFixed(2) + "%",
                 pool.weight + "x",
                 pool.totalAmount,
                 pool.totalWeights,
