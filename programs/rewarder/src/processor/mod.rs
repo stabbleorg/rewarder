@@ -7,11 +7,17 @@ pub use rewarder_update::*;
 pub mod rewarder_derive;
 pub use rewarder_derive::*;
 
+pub mod rewarder_close;
+pub use rewarder_close::*;
+
 pub mod pool_create;
 pub use pool_create::*;
 
 pub mod pool_update;
 pub use pool_update::*;
+
+pub mod pool_close;
+pub use pool_close::*;
 
 pub mod miner_create;
 pub use miner_create::*;
