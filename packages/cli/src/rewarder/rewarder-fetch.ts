@@ -2,6 +2,8 @@ import type { Command } from "commander";
 import { table } from "table";
 import { PublicKey } from "@solana/web3.js";
 import { RewarderContext } from "@stabbleorg/rewarder-sdk";
+import { SafeAmount } from "@stabbleorg/anchor-contrib";
+import { Helius } from "helius-sdk";
 import { useContext } from "../context";
 import { parseKey } from "../utils";
 
@@ -25,13 +27,21 @@ export function fetchRewarder(program: Command) {
       console.log("Starts:", rewarder.startsAt);
       console.log("Ends:", rewarder.endsAt);
 
+      const helius = new Helius(
+        provider.connection.rpcEndpoint.split("api-key=")[1],
+      );
+      const assets = await helius.rpc.getAssetBatch({
+        ids: pools.map((pool) => pool.mintAddress.toBase58()),
+      });
+
       console.log(
         table([
           [
             "Address",
             "Mint",
+            "Staked %",
             "Weight",
-            "Total amount",
+            "Total staked",
             "Total weights",
             "Weekly rewards",
             "Miners",
@@ -39,15 +49,26 @@ export function fetchRewarder(program: Command) {
           ...pools
             .filter((pool) => pool.weight > 0)
             .sort((a, b) => b.totalWeights - a.totalWeights)
-            .map((pool) => [
-              pool.address.toBase58(),
-              pool.mintAddress.toBase58(),
-              pool.weight + "x",
-              pool.totalAmount,
-              pool.totalWeights,
-              pool.weeklyRewards,
-              pool.data.numMiners,
-            ]),
+            .map((pool) => {
+              const asset = assets.find(
+                (asset) => asset.id === pool.mintAddress.toBase58(),
+              )!;
+              const supply = SafeAmount.toUiAmount(
+                asset.token_info?.supply!,
+                asset.token_info?.decimals!,
+              );
+
+              return [
+                pool.address.toBase58(),
+                asset.content?.metadata.symbol, // pool.mintAddress.toBase58(),
+                (pool.totalAmount / supply * 100).toFixed(2) + "%",
+                pool.weight + "x",
+                pool.totalAmount,
+                pool.totalWeights,
+                pool.weeklyRewards,
+                pool.data.numMiners,
+              ];
+            }),
         ]),
       );
     });

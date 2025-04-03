@@ -142,7 +142,7 @@ export class RewarderContext<
 
     const miners: Miner[] = [];
 
-    for (const { publicKey, account } of accounts) {
+    for (const { account } of accounts) {
       const pool = pools.get(account.pool.toBase58());
 
       if (pool) {
@@ -312,6 +312,49 @@ export class RewarderContext<
     );
   }
 
+  async closeRewarder({
+    rewarder,
+    altAccounts,
+    priorityLevel,
+    maxPriorityMicroLamports,
+    simulate,
+  }: TransactionArgs<{
+    rewarder: Rewarder;
+  }>): Promise<TransactionSignature> {
+    const data = await this.provider.connection.getAccountInfo(
+      rewarder.mintAddress,
+    );
+    const tokenProgramAddress = data!.owner;
+
+    return this.sendSmartTransaction(
+      [
+        await this.program.methods
+          .closeRewarder()
+          .accountsStrict({
+            admin: this.walletAddress,
+            rewarder: rewarder.address,
+            rewarderAuthority: rewarder.authorityAddress,
+            mint: rewarder.mintAddress,
+            userToken: this.getAssociatedTokenAddress(
+              rewarder.mintAddress,
+              tokenProgramAddress,
+            ),
+            rewarderToken: rewarder.getAssociatedTokenAddress(
+              rewarder.mintAddress,
+              tokenProgramAddress,
+            ),
+            tokenProgram: tokenProgramAddress,
+          })
+          .instruction(),
+      ],
+      [],
+      altAccounts,
+      priorityLevel,
+      maxPriorityMicroLamports,
+      simulate,
+    );
+  }
+
   async createPool({
     rewarderAddress,
     mintAddress,
@@ -377,6 +420,34 @@ export class RewarderContext<
       [
         await this.program.methods
           .updatePool(weight)
+          .accountsStrict({
+            admin: pool.rewarder.adminAddress,
+            pool: pool.address,
+            rewarder: pool.rewarder.address,
+          })
+          .instruction(),
+      ],
+      [],
+      altAccounts,
+      priorityLevel,
+      maxPriorityMicroLamports,
+      simulate,
+    );
+  }
+
+  async closePool({
+    pool,
+    altAccounts,
+    priorityLevel,
+    maxPriorityMicroLamports,
+    simulate,
+  }: TransactionArgs<{
+    pool: Pool;
+  }>): Promise<TransactionSignature> {
+    return this.sendSmartTransaction(
+      [
+        await this.program.methods
+          .closePool()
           .accountsStrict({
             admin: pool.rewarder.adminAddress,
             pool: pool.address,
