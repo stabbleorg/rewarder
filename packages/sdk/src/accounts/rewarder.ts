@@ -33,15 +33,23 @@ export const ONE_MONTH_SECONDS = new BN(86400 * 30);
 export class Rewarder {
   static REWARDS_PER_WEIGHT_PRECISION: BN = new BN("1000000000");
 
+  public data: RewarderData;
+
   constructor(
     readonly address: PublicKey,
-    readonly data: RewarderData,
+    data: RewarderData,
     readonly parentRewarder?: Rewarder,
   ) {
     if (parentRewarder) {
       if (!data.parentRewarder?.equals(parentRewarder.address))
         throw new Error("Invalid parent rewarder");
     }
+
+    this.data = data;
+  }
+
+  refreshData(updatedData: Partial<RewarderData>) {
+    this.data = { ...this.data, ...updatedData };
   }
 
   get authorityAddress(): PublicKey {

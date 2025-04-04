@@ -21,10 +21,18 @@ export type GovernoData = {
 };
 
 export class Governo {
+  public data: GovernoData;
+
   constructor(
     readonly address: PublicKey,
-    readonly data: GovernoData,
-  ) {}
+    data: GovernoData,
+  ) {
+    this.data = data;
+  }
+
+  refreshData(updatedData: Partial<GovernoData>) {
+    this.data = { ...this.data, ...updatedData };
+  }
 
   get authorityAddress(): PublicKey {
     return GovernoContext.getGovernoAuthorityAddress(this.address);

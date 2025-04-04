@@ -21,11 +21,19 @@ export type MinerData = {
 };
 
 export class Miner {
+  public data: MinerData;
+
   constructor(
     readonly pool: Pool,
-    readonly data: MinerData,
+    data: MinerData,
   ) {
     if (!pool.address.equals(data.pool)) throw new Error("Invalid pool");
+
+    this.data = data;
+  }
+
+  refreshData(updatedData: Partial<MinerData>) {
+    this.data = { ...this.data, ...updatedData };
   }
 
   get address(): PublicKey {
