@@ -22,6 +22,7 @@ export function fetchRewarder(program: Command) {
         new Map([[rewarder.address.toBase58(), rewarder]]),
       );
 
+      console.log("Faucet:", rewarder.authorityAddress.toBase58());
       console.log("Total rewards:", rewarder.totalRewards);
       console.log("Total weights:", rewarder.totalWeights);
       console.log("Starts:", rewarder.startsAt);
