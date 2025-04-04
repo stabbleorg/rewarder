@@ -25,13 +25,21 @@ export type PoolData = {
 export class Pool {
   static REWARDS_PER_AMOUNT_PRECISION: BN = new BN("1000000000");
 
+  public data: PoolData;
+
   constructor(
     readonly rewarder: Rewarder,
     readonly address: PublicKey,
-    readonly data: PoolData,
+    data: PoolData,
   ) {
     if (!rewarder.address.equals(data.rewarder))
       throw new Error("Invalid rewarder");
+
+    this.data = data;
+  }
+
+  refreshData(updatedData: Partial<PoolData>) {
+    this.data = { ...this.data, ...updatedData };
   }
 
   get dailyRewardsPerAmount(): number {
