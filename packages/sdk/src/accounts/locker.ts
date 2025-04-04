@@ -20,11 +20,19 @@ export type LockerData = {
 };
 
 export class Locker {
+  public data: LockerData;
+
   constructor(
     readonly governo: Governo,
     readonly address: PublicKey,
-    readonly data: LockerData,
-  ) {}
+    data: LockerData,
+  ) {
+    this.data = data;
+  }
+
+  refreshData(updatedData: Partial<LockerData>) {
+    this.data = { ...this.data, ...updatedData };
+  }
 
   get authorityAddress(): PublicKey {
     return GovernoContext.getLockerAuthorityAddress(this.address);
