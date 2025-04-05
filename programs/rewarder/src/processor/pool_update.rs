@@ -10,11 +10,10 @@ pub fn process_update_pool(ctx: Context<UpdatePool>, weight: u32) -> Result<()> 
 
     if current_time > ctx.accounts.rewarder.last_updated_at {
         ctx.accounts.rewarder.refresh_rewards_per_weight(current_time)?;
-
-        ctx.accounts
-            .pool
-            .refresh_rewards_per_amount(ctx.accounts.rewarder.rewards_per_weight)?;
     }
+    ctx.accounts
+        .pool
+        .refresh_rewards_per_amount(ctx.accounts.rewarder.rewards_per_weight)?;
 
     let total_weights = weight as u128 * ctx.accounts.pool.total_amount as u128;
 

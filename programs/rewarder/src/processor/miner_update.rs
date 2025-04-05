@@ -254,9 +254,8 @@ impl<'info> WithMiner<'info> {
 
         if current_time > self.rewarder.last_updated_at {
             self.rewarder.refresh_rewards_per_weight(current_time)?;
-
-            self.pool.refresh_rewards_per_amount(self.rewarder.rewards_per_weight)?;
         }
+        self.pool.refresh_rewards_per_amount(self.rewarder.rewards_per_weight)?;
 
         Ok(())
     }
