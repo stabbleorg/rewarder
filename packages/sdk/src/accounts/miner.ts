@@ -56,12 +56,10 @@ export class Miner {
     const currentTime = Math.trunc(new Date().getTime() / 1000);
     const lastUpdatedTime = this.pool.rewarder.data.lastUpdatedAt.toNumber();
 
-    let rewardsPerAmount = this.pool.data.rewardsPerAmount;
+    let rewardsPerWeight = this.pool.rewarder.data.rewardsPerWeight;
 
     if (currentTime > lastUpdatedTime) {
       const elapsedTime = currentTime - lastUpdatedTime;
-
-      let rewardsPerWeight = this.pool.rewarder.data.rewardsPerWeight;
 
       if (this.pool.rewarder.data.totalWeights.gt(new BN(0))) {
         rewardsPerWeight = this.pool.rewarder.data.totalRewards
@@ -71,18 +69,20 @@ export class Miner {
           .div(this.pool.rewarder.data.totalWeights)
           .add(this.pool.rewarder.data.rewardsPerWeight);
       }
+    }
 
-      if (this.pool.data.totalAmount.gt(new BN(0))) {
-        rewardsPerAmount = rewardsPerWeight
-          .mul(this.pool.data.totalWeights)
-          .div(Rewarder.REWARDS_PER_WEIGHT_PRECISION)
-          .add(this.pool.data.totalRewardsCredit)
-          .sub(this.pool.data.totalRewardsDebt)
-          .sub(this.pool.data.totalRewardsDistributed)
-          .mul(Pool.REWARDS_PER_AMOUNT_PRECISION)
-          .div(this.pool.data.totalAmount)
-          .add(this.pool.data.rewardsPerAmount);
-      }
+    let rewardsPerAmount = this.pool.data.rewardsPerAmount;
+
+    if (this.pool.data.totalAmount.gt(new BN(0))) {
+      rewardsPerAmount = rewardsPerWeight
+        .mul(this.pool.data.totalWeights)
+        .div(Rewarder.REWARDS_PER_WEIGHT_PRECISION)
+        .add(this.pool.data.totalRewardsCredit)
+        .sub(this.pool.data.totalRewardsDebt)
+        .sub(this.pool.data.totalRewardsDistributed)
+        .mul(Pool.REWARDS_PER_AMOUNT_PRECISION)
+        .div(this.pool.data.totalAmount)
+        .add(this.pool.data.rewardsPerAmount);
     }
 
     const rewardsClaimable = rewardsPerAmount
