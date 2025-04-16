@@ -157,6 +157,9 @@ export class Pool {
   }
 
   get totalWeights(): number {
-    return SafeAmount.toUiAmount(this.data.totalWeights, this.data.decimals);
+    return SafeAmount.toUiAmount(
+      this.data.totalWeights,
+      this.rewarder.data.decimals,
+    );
   }
 }

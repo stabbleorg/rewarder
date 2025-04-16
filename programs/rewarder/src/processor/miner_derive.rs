@@ -3,6 +3,8 @@ use anchor_common::validate::Validate;
 use anchor_lang::prelude::*;
 
 pub fn process_derive_miner(ctx: Context<DeriveMiner>) -> Result<()> {
+    ctx.accounts.pool.num_miners += 1;
+
     ctx.accounts.miner.set_inner(Miner {
         pool: ctx.accounts.pool.key(),
         authority: ctx.accounts.authority.key(),
@@ -13,8 +15,7 @@ pub fn process_derive_miner(ctx: Context<DeriveMiner>) -> Result<()> {
         rewards_credit: 0,
         rewards_claimed: 0,
     });
-
-    ctx.accounts.pool.num_miners += 1;
+    ctx.accounts.miner.emit_miner_created();
 
     Ok(())
 }

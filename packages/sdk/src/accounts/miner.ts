@@ -52,6 +52,13 @@ export class Miner {
     return SafeAmount.toUiAmount(this.data.amount, this.pool.data.decimals);
   }
 
+  get weights(): number {
+    return SafeAmount.toUiAmount(
+      this.data.amount.mul(new BN(this.pool.data.weight)),
+      this.pool.rewarder.data.decimals,
+    );
+  }
+
   get rewards(): number {
     const currentTime = Math.trunc(new Date().getTime() / 1000);
     const lastUpdatedTime = this.pool.rewarder.data.lastUpdatedAt.toNumber();
