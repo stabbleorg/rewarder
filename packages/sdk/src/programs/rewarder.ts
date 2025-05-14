@@ -213,7 +213,6 @@ export class RewarderContext<
       await this.getOrCreateAssociatedTokenAddressInstruction(
         mintAddress,
         authorityAddress,
-        true,
         tokenProgramAddress,
       );
     if (instruction) instructions.push(instruction);
@@ -603,7 +602,6 @@ export class RewarderContext<
         await this.getOrCreateAssociatedTokenAddressInstruction(
           pool.mintAddress,
           minerAddress,
-          true,
           tokenProgramAddress,
         );
       if (instruction) instructions.push(instruction);
@@ -713,7 +711,6 @@ export class RewarderContext<
         await this.getOrCreateAssociatedTokenAddressInstruction(
           derivedPool.mintAddress,
           derivedMinerAddress,
-          true,
           tokenProgramAddress,
         );
       if (instruction) instructions.push(instruction);
@@ -779,7 +776,6 @@ export class RewarderContext<
       await this.getOrCreateAssociatedTokenAddressInstruction(
         pool.mintAddress,
         authorityAddress,
-        true,
         tokenProgramAddress,
       );
     if (createUserAtaIX) instructions.push(createUserAtaIX);
@@ -899,7 +895,6 @@ export class RewarderContext<
       await this.getOrCreateAssociatedTokenAddressInstruction(
         miner.pool.rewarder.mintAddress,
         miner.beneficiaryAddress,
-        true,
         tokenProgramAddress,
       );
     if (createUserAtaIX) instructions.push(createUserAtaIX);

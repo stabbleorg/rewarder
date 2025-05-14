@@ -1,6 +1,9 @@
 pub mod governo_create;
 pub use governo_create::*;
 
+pub mod governo_close;
+pub use governo_close::*;
+
 pub mod locker_create;
 pub use locker_create::*;
 
