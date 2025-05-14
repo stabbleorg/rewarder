@@ -22,6 +22,11 @@ pub mod governo {
     }
 
     #[access_control(ctx.accounts.validate())]
+    pub fn close_governo(ctx: Context<CloseGoverno>) -> Result<()> {
+        Ok(())
+    }
+
+    #[access_control(ctx.accounts.validate())]
     pub fn create_locker(ctx: Context<CreateLocker>, amount: u64, duration: u32) -> Result<()> {
         process_create_locker(ctx, amount, duration)
     }

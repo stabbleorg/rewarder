@@ -212,6 +212,33 @@ export class GovernoContext<
     return { address, signature };
   }
 
+  async closeGoverno({
+    governo,
+    altAccounts,
+    priorityLevel,
+    maxPriorityMicroLamports,
+    simulate,
+  }: TransactionArgs<{
+    governo: Governo;
+  }>): Promise<TransactionSignature> {
+    return this.sendSmartTransaction(
+      [
+        await this.program.methods
+          .closeGoverno()
+          .accountsStrict({
+            admin: governo.data.admin,
+            governo: governo.address,
+          })
+          .instruction(),
+      ],
+      [],
+      altAccounts,
+      priorityLevel,
+      maxPriorityMicroLamports,
+      simulate,
+    );
+  }
+
   async lock({
     pool,
     governo,
@@ -247,7 +274,6 @@ export class GovernoContext<
     } = await this.getOrCreateAssociatedTokenAddressInstruction(
       governo.govMintAddress,
       authorityAddress,
-      true,
     );
     if (createLockerGovAtaIX) instructions.push(createLockerGovAtaIX);
 
@@ -255,7 +281,6 @@ export class GovernoContext<
       await this.getOrCreateAssociatedTokenAddressInstruction(
         governo.veMintAddress,
         authorityAddress,
-        true,
       );
     if (createLockerVeAtaIX) instructions.push(createLockerVeAtaIX);
 
@@ -316,7 +341,6 @@ export class GovernoContext<
       await this.getOrCreateAssociatedTokenAddressInstruction(
         pool.mintAddress,
         minerAddress,
-        true,
       );
     if (createMinerVeAtaIX) instructions.push(createMinerVeAtaIX);
 
