@@ -17,7 +17,8 @@ export type GovernoData = {
   maxLockDuration: number;
   totalLockedAmount: BN;
   totalVotingWeight: BN;
-  padding: number[];
+  rewarder: PublicKey | null;
+  // padding: number[];
 };
 
 export class Governo {
@@ -44,6 +45,12 @@ export class Governo {
 
   get veMintAddress(): PublicKey {
     return this.data.veMint;
+  }
+
+  get rewarderAddress(): PublicKey {
+    if (!this.data.rewarder) throw new Error("Rewarder was not set yet");
+
+    return this.data.rewarder;
   }
 
   get totalLockedAmount(): number {

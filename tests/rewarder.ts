@@ -146,6 +146,8 @@ describe("rewarder", () => {
     assert.equal(governo.totalLockedAmount, 0);
 
     governoAddress = address;
+
+    await governoContext.updateRewarder({ governo, rewarderAddress });
   });
 
   it("should create a pool for governo", async () => {

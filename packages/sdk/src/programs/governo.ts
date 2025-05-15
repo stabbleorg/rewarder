@@ -212,6 +212,42 @@ export class GovernoContext<
     return { address, signature };
   }
 
+  async updateRewarder({
+    governo,
+    rewarderAddress,
+    altAccounts,
+    priorityLevel,
+    maxPriorityMicroLamports,
+    simulate,
+  }: TransactionArgs<{
+    governo: Governo;
+    rewarderAddress: PublicKey;
+  }>): Promise<TransactionSignature> {
+    return this.sendSmartTransaction(
+      [
+        await this.program.methods
+          .updateRewarder()
+          .accountsStrict({
+            admin: governo.data.admin,
+            governo: governo.address,
+          })
+          .remainingAccounts([
+            {
+              pubkey: rewarderAddress,
+              isSigner: false,
+              isWritable: false,
+            },
+          ])
+          .instruction(),
+      ],
+      [],
+      altAccounts,
+      priorityLevel,
+      maxPriorityMicroLamports,
+      simulate,
+    );
+  }
+
   async closeGoverno({
     governo,
     altAccounts,
@@ -258,6 +294,9 @@ export class GovernoContext<
   }>): Promise<AddressWithTransactionSignature> {
     if (!governo.veMintAddress.equals(pool.mintAddress))
       throw new Error("Invalid pool account");
+
+    if (!governo.rewarderAddress.equals(pool.rewarder.address))
+      throw new Error("Invalid rewarder account");
 
     const instructions: TransactionInstruction[] = [];
 
