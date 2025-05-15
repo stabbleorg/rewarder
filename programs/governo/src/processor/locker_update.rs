@@ -10,6 +10,7 @@ use rewarder::{
 };
 
 pub fn process_stake_locker(ctx: Context<UpdateLocker>) -> Result<()> {
+    require_keys_eq!(ctx.accounts.rewarder.key(), ctx.accounts.governo.rewarder.unwrap());
     require_gt!(ctx.accounts.locker.unlocks_at, Clock::get()?.unix_timestamp);
 
     ctx.accounts.locker.authority_seeds(|signer_seed| {

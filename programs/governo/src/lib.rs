@@ -16,6 +16,10 @@ pub mod governo {
         process_create_governo(ctx, min_lock_duration, max_lock_duration)
     }
 
+    pub fn update_rewarder<'a, 'b, 'c, 'info>(ctx: Context<'_, '_, 'info, 'info, UpdateGoverno<'info>>) -> Result<()> {
+        process_update_rewarder(ctx)
+    }
+
     #[access_control(ctx.accounts.validate())]
     pub fn create_locker(ctx: Context<CreateLocker>, amount: u64, duration: u32) -> Result<()> {
         process_create_locker(ctx, amount, duration)

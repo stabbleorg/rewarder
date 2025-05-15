@@ -1,7 +1,7 @@
 use crate::state::*;
-use anchor_common::{token::is_supported_mint, validate::Validate};
+use anchor_common::validate::Validate;
 use anchor_lang::prelude::*;
-use anchor_spl::token_interface::Mint;
+use anchor_spl::token::Mint;
 
 pub fn process_create_governo(
     ctx: Context<CreateGoverno>,
@@ -20,7 +20,9 @@ pub fn process_create_governo(
         min_lock_duration,
         max_lock_duration,
         total_locked_amount: 0,
-        padding: [0; 128],
+        total_voting_weight: 0,
+        rewarder: None,
+        padding: [0; 87],
     });
 
     Ok(())
@@ -30,9 +32,9 @@ pub fn process_create_governo(
 pub struct CreateGoverno<'info> {
     pub admin: Signer<'info>,
 
-    pub gov_mint: InterfaceAccount<'info, Mint>,
+    pub gov_mint: Account<'info, Mint>,
 
-    pub ve_mint: InterfaceAccount<'info, Mint>,
+    pub ve_mint: Account<'info, Mint>,
 
     #[account(zero, rent_exempt = enforce)]
     pub governo: Account<'info, Governo>,
@@ -44,9 +46,6 @@ pub struct CreateGoverno<'info> {
 
 impl<'info> Validate<'info> for CreateGoverno<'info> {
     fn validate(&self) -> Result<()> {
-        assert!(is_supported_mint(&self.gov_mint).unwrap());
-        assert!(is_supported_mint(&self.ve_mint).unwrap());
-
         assert_eq!(
             self.ve_mint.to_account_info().owner.key(),
             self.gov_mint.to_account_info().owner.key()

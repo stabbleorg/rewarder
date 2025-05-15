@@ -25,7 +25,11 @@ pub struct Governo {
 
     pub total_locked_amount: u64,
 
-    pub padding: [u8; 128],
+    pub total_voting_weight: u64,
+
+    pub rewarder: Option<Pubkey>,
+
+    pub padding: [u8; 87],
 }
 
 impl Governo {

@@ -26,6 +26,7 @@ pub fn process_create_locker(ctx: Context<CreateLocker>, amount: u64, duration: 
         .unwrap();
 
     ctx.accounts.governo.total_locked_amount += amount;
+    ctx.accounts.governo.total_voting_weight += ve_amount;
 
     let timestamp = Clock::get()?.unix_timestamp;
 

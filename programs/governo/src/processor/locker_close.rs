@@ -7,6 +7,7 @@ use anchor_spl::token_interface::{
 
 pub fn process_close_locker(ctx: Context<CloseLocker>) -> Result<()> {
     ctx.accounts.governo.total_locked_amount -= ctx.accounts.locker.locked_amount;
+    ctx.accounts.governo.total_voting_weight -= ctx.accounts.locker.voting_weight;
 
     ctx.accounts.locker.authority_seeds(|signer_seed| {
         transfer_checked(
