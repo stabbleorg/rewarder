@@ -8,13 +8,14 @@ import {
   PublicKey,
   clusterApiUrl,
 } from "@solana/web3.js";
-import { setupGovernoProgram } from "./governo";
 import { setupRewarderProgram } from "./rewarder";
+import { setupGovernoProgram } from "./governo";
+import { setupVestoProgram } from "./vesto";
 import { setContext } from "./context";
 import { parseKeypair } from "./utils";
 
 program
-  .version("0.11.1")
+  .version("0.12.0")
   .option("-k, --keypair <path>", "wallet keypair", parseKeypair)
   .option("-u, --url <string>", "RPC monk or url", "devnet")
   .option("-a, --alt-keys <string...>", "Address Lookup Table keys")
@@ -64,6 +65,7 @@ program
 
 setupGovernoProgram(program);
 setupRewarderProgram(program);
+setupVestoProgram(program);
 
 program
   .parseAsync(process.argv)

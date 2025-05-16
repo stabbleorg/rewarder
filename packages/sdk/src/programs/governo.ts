@@ -78,7 +78,7 @@ export class GovernoContext<
     ]);
 
     return accounts.map(
-      (account) => new Locker(governo, account.publicKey, account.account),
+      ({ publicKey, account }) => new Locker(governo, publicKey, account),
     );
   }
 
