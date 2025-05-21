@@ -517,32 +517,6 @@ export class GovernoContext<
       throw new Error("Invalid miner account");
 
     const instructions: TransactionInstruction[] = [];
-    const remainingAccounts: AccountMeta[] = [];
-
-    if (!miner.amount) {
-      remainingAccounts.push(
-        {
-          pubkey: this.walletAddress,
-          isSigner: false,
-          isWritable: true,
-        },
-        {
-          pubkey: miner.getAssociatedTokenAddress(miner.pool.mintAddress),
-          isSigner: false,
-          isWritable: true,
-        },
-        {
-          pubkey: miner.pool.mintAddress,
-          isSigner: false,
-          isWritable: true,
-        },
-        {
-          pubkey: TOKEN_PROGRAM_ID,
-          isSigner: false,
-          isWritable: false,
-        },
-      );
-    }
 
     const {
       address: authorityTokenAddress,

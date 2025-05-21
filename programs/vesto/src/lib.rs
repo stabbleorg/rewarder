@@ -33,14 +33,14 @@ pub mod vesto {
         )
     }
 
-    pub fn update_vesting_period(
-        ctx: Context<UpdateConfig>,
-        initial_unlock_time: i64,
-        vesting_start_time: i64,
-        vesting_end_time: i64,
-    ) -> Result<()> {
-        process_update_vesting_period(ctx, initial_unlock_time, vesting_start_time, vesting_end_time)
-    }
+    // pub fn update_vesting_period(
+    //     ctx: Context<UpdateConfig>,
+    //     initial_unlock_time: i64,
+    //     vesting_start_time: i64,
+    //     vesting_end_time: i64,
+    // ) -> Result<()> {
+    //     process_update_vesting_period(ctx, initial_unlock_time, vesting_start_time, vesting_end_time)
+    // }
 
     #[access_control(ctx.accounts.validate())]
     pub fn create_pool(ctx: Context<CreatePool>) -> Result<()> {

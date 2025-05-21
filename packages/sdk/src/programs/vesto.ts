@@ -20,6 +20,7 @@ import {
 } from "@stabbleorg/anchor-contrib";
 import {
   Governo,
+  Miner,
   Pool as RewardPool,
   VestingConfig,
   VestingPool,
@@ -400,6 +401,60 @@ export class VestoContext<
           rewardPool: rewardPool.address,
           rewarder: rewardPool.rewarder.address,
           iouMint: pool.iouMintAddress,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          rewarderProgram: REWARDER_PROGRAM_ID,
+        })
+        .instruction(),
+    );
+
+    return this.sendSmartTransaction(
+      instructions,
+      [],
+      altAccounts,
+      priorityLevel,
+      maxPriorityMicroLamports,
+      simulate,
+    );
+  }
+
+  async claim({
+    miner,
+    position,
+    altAccounts,
+    priorityLevel,
+    maxPriorityMicroLamports,
+    simulate,
+  }: TransactionArgs<{
+    miner: Miner;
+    position: VestingPosition;
+  }>): Promise<TransactionSignature> {
+    const instructions: TransactionInstruction[] = [];
+
+    const {
+      address: userRewardTokenAddress,
+      instruction: createUserRewardAtaIX,
+    } = await this.getOrCreateAssociatedTokenAddressInstruction(
+      miner.pool.rewarder.mintAddress,
+    );
+    if (createUserRewardAtaIX) instructions.push(createUserRewardAtaIX);
+
+    const rewarderRewardTokenAddress =
+      miner.pool.rewarder.getAssociatedTokenAddress(
+        miner.pool.rewarder.mintAddress,
+      );
+
+    instructions.push(
+      await this.program.methods
+        .claimPosition()
+        .accountsStrict({
+          position: position.address,
+          miner: miner.address,
+          rewardPool: miner.pool.address,
+          rewarder: miner.pool.rewarder.address,
+          rewarderAuthority: miner.pool.rewarder.authorityAddress,
+          rewarderToken: rewarderRewardTokenAddress,
+          userToken: userRewardTokenAddress,
+          mint: miner.pool.rewarder.mintAddress,
           tokenProgram: TOKEN_PROGRAM_ID,
           rewarderProgram: REWARDER_PROGRAM_ID,
         })
