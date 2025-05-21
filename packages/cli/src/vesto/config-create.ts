@@ -29,10 +29,7 @@ export function createConfig(program: Command) {
       "initial unlock rate",
       Number,
     )
-    .requiredOption(
-      "--total-capacity <number>",
-      "total capacity",
-    )
+    .requiredOption("--total-capacity <number>", "total capacity")
     .option("--config-k-p <path>", "config keypair", parseKeypair)
     .action(
       async ({

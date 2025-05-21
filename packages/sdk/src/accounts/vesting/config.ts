@@ -15,6 +15,7 @@ export type VestingConfigData = {
   releaseInterval: BN;
   initialUnlockBps: number;
   totalCapacity: BN;
+  totalAmount: BN;
   totalClaimed: BN;
   activePools: number;
 };
@@ -38,6 +39,12 @@ export class VestingConfig {
     return VestoContext.getVaultAuthorityAddress(this.address);
   }
 
+  get lockDuration(): number {
+    return this.data.vestingStartTime
+      .sub(this.data.initialUnlockTime)
+      .toNumber();
+  }
+
   get initialUnlockDate(): Date {
     return new Date(this.data.initialUnlockTime.toNumber() * 1000);
   }
@@ -53,6 +60,13 @@ export class VestingConfig {
   get totalCapacity(): number {
     return SafeAmount.toUiAmount(
       this.data.totalCapacity,
+      this.governo.data.decimals,
+    );
+  }
+
+  get totalAmount(): number {
+    return SafeAmount.toUiAmount(
+      this.data.totalAmount,
       this.governo.data.decimals,
     );
   }

@@ -1,6 +1,9 @@
 pub mod config_create;
 pub use config_create::*;
 
+pub mod config_update;
+pub use config_update::*;
+
 pub mod pool_create;
 pub use pool_create::*;
 

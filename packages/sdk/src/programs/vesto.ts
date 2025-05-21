@@ -1,24 +1,32 @@
 import BN from "bn.js";
 import {
-  AccountMeta,
   Keypair,
   PublicKey,
   SystemProgram,
   TransactionInstruction,
   TransactionSignature,
 } from "@solana/web3.js";
+import {
+  getAssociatedTokenAddressSync,
+  TOKEN_PROGRAM_ID,
+} from "@solana/spl-token";
 import { Program, Provider } from "@coral-xyz/anchor";
 import {
   AddressWithTransactionSignature,
   TransactionArgs,
   WalletContext,
   SafeAmount,
-  DataUpdatedEvent,
-  SIMULATED_SIGNATURE,
-  TOKEN_MINT_RENT_FEE_LAMPORTS,
   FloatLike,
 } from "@stabbleorg/anchor-contrib";
-import { Governo, VestingConfig, VestingPool } from "../accounts";
+import {
+  Governo,
+  Pool as RewardPool,
+  VestingConfig,
+  VestingPool,
+  VestingPosition,
+} from "../accounts";
+import { REWARDER_PROGRAM_ID, RewarderContext } from "./rewarder";
+import REWARDER_PROGRAM_IDL from "../generated/idl/rewarder.json";
 import { type Vesto as IDLType } from "../generated/vesto";
 import IDL from "../generated/idl/vesto.json";
 
@@ -71,6 +79,19 @@ export class VestoContext<
     );
   }
 
+  async loadPool(
+    address: PublicKey,
+    config?: VestingConfig,
+  ): Promise<VestingPool> {
+    const data = await this.program.account.vestingPool.fetch(address);
+
+    if (!config) {
+      config = await this.loadConfig(data.config);
+    }
+
+    return new VestingPool(config, data);
+  }
+
   async loadPools(configs: Map<string, VestingConfig>): Promise<VestingPool[]> {
     const accounts = await this.program.account.vestingPool.all();
 
@@ -85,6 +106,19 @@ export class VestoContext<
     }
 
     return pools;
+  }
+
+  async loadPosition(
+    pool: VestingPool,
+    userAddress: PublicKey = this.walletAddress,
+  ): Promise<VestingPosition | null> {
+    const address = VestoContext.getPositionAddress(pool.address, userAddress);
+
+    const data =
+      await this.program.account.vestingPosition.fetchNullable(address);
+    if (!data) return null;
+
+    return new VestingPosition(pool, data);
   }
 
   async createConfig({
@@ -151,6 +185,44 @@ export class VestoContext<
     return { address, signature };
   }
 
+  async updateVestingPeriod({
+    config,
+    initialUnlockDate,
+    vestingStartDate,
+    vestingEndDate,
+    altAccounts,
+    priorityLevel,
+    maxPriorityMicroLamports,
+    simulate,
+  }: TransactionArgs<{
+    config: VestingConfig;
+    initialUnlockDate: Date;
+    vestingStartDate: Date;
+    vestingEndDate: Date;
+  }>): Promise<TransactionSignature> {
+    return this.sendSmartTransaction(
+      [
+        await this.program.methods
+          .updateVestingPeriod(
+            new BN(Math.trunc(initialUnlockDate.getTime() / 1000)),
+            new BN(Math.trunc(vestingStartDate.getTime() / 1000)),
+            new BN(Math.trunc(vestingEndDate.getTime() / 1000)),
+          )
+          .accountsStrict({
+            admin: config.governo.data.admin,
+            governo: config.governo.address,
+            config: config.address,
+          })
+          .instruction(),
+      ],
+      [],
+      altAccounts,
+      priorityLevel,
+      maxPriorityMicroLamports,
+      simulate,
+    );
+  }
+
   async createPool({
     config,
     iouMintAddress,
@@ -176,6 +248,166 @@ export class VestoContext<
           })
           .instruction(),
       ],
+      [],
+      altAccounts,
+      priorityLevel,
+      maxPriorityMicroLamports,
+      simulate,
+    );
+  }
+
+  async redeem({
+    pool,
+    rewardPool,
+    altAccounts,
+    priorityLevel,
+    maxPriorityMicroLamports,
+    simulate,
+  }: TransactionArgs<{
+    pool: VestingPool;
+    rewardPool: RewardPool;
+  }>): Promise<TransactionSignature> {
+    const instructions: TransactionInstruction[] = [];
+
+    const address = VestoContext.getPositionAddress(
+      pool.address,
+      this.walletAddress,
+    );
+    const minerAddress = RewarderContext.getMinerAddress(
+      address,
+      rewardPool.address,
+    );
+
+    const positionIouTokenAddress = getAssociatedTokenAddressSync(
+      pool.iouMintAddress,
+      address,
+      true,
+    );
+    const minerIouTokenAddress = getAssociatedTokenAddressSync(
+      pool.iouMintAddress,
+      minerAddress,
+      true,
+    );
+
+    const { address: userIouTokenAddress, instruction: userIouTokenIX } =
+      await this.getOrCreateAssociatedTokenAddressInstruction(
+        pool.iouMintAddress,
+      );
+
+    const position = await this.loadPosition(pool);
+
+    if (position) {
+      instructions.push(
+        await this.program.methods
+          .unstakePosition()
+          .accountsStrict({
+            governo: pool.config.governo.address,
+            config: pool.config.address,
+            pool: pool.address,
+            position: address,
+            positionIouToken: positionIouTokenAddress,
+            miner: minerAddress,
+            minerIouToken: minerIouTokenAddress,
+            rewardPool: rewardPool.address,
+            rewarder: rewardPool.rewarder.address,
+            iouMint: pool.iouMintAddress,
+            tokenProgram: TOKEN_PROGRAM_ID,
+            rewarderProgram: REWARDER_PROGRAM_ID,
+          })
+          .instruction(),
+      );
+    } else {
+      if (userIouTokenIX) {
+        throw new Error("You don't have any IOU tokens to redeem");
+      }
+
+      const { instruction: positionIouTokenIX } =
+        await this.getOrCreateAssociatedTokenAddressInstruction(
+          pool.iouMintAddress,
+          address,
+        );
+      if (positionIouTokenIX) instructions.push(positionIouTokenIX);
+
+      const { instruction: minerIouTokenIX } =
+        await this.getOrCreateAssociatedTokenAddressInstruction(
+          pool.iouMintAddress,
+          minerAddress,
+        );
+      if (minerIouTokenIX) instructions.push(minerIouTokenIX);
+
+      const rewarderProgram = new Program(REWARDER_PROGRAM_IDL, this.provider);
+
+      instructions.push(
+        await rewarderProgram.methods
+          .createMiner(address)
+          .accountsStrict({
+            payer: this.walletAddress,
+            miner: minerAddress,
+            pool: rewardPool.address,
+            rewarder: rewardPool.rewarder.address,
+            systemProgram: SystemProgram.programId,
+          })
+          .instruction(),
+        await this.program.methods
+          .createPosition()
+          .accountsStrict({
+            user: this.walletAddress,
+            pool: pool.address,
+            position: address,
+            systemProgram: SystemProgram.programId,
+          })
+          .instruction(),
+      );
+    }
+
+    const { address: userGovTokenAddress, instruction: userGovTokenIX } =
+      await this.getOrCreateAssociatedTokenAddressInstruction(
+        pool.config.governo.govMintAddress,
+      );
+    if (userGovTokenIX) instructions.push(userGovTokenIX);
+
+    instructions.push(
+      await this.program.methods
+        .redeemPosition()
+        .accountsStrict({
+          user: this.walletAddress,
+          userGovToken: userGovTokenAddress,
+          userIouToken: userIouTokenIX ? null : userIouTokenAddress,
+          governo: pool.config.governo.address,
+          config: pool.config.address,
+          pool: pool.address,
+          position: address,
+          positionIouToken: positionIouTokenAddress,
+          vaultAuthority: pool.config.authorityAddress,
+          vaultGovToken: pool.config.getAssociatedTokenAddress(
+            pool.config.governo.govMintAddress,
+          ),
+          govMint: pool.config.governo.govMintAddress,
+          iouMint: pool.iouMintAddress,
+          tokenProgram: TOKEN_PROGRAM_ID,
+        })
+        .instruction(),
+      await this.program.methods
+        .stakePosition()
+        .accountsStrict({
+          governo: pool.config.governo.address,
+          config: pool.config.address,
+          pool: pool.address,
+          position: address,
+          positionIouToken: positionIouTokenAddress,
+          miner: minerAddress,
+          minerIouToken: minerIouTokenAddress,
+          rewardPool: rewardPool.address,
+          rewarder: rewardPool.rewarder.address,
+          iouMint: pool.iouMintAddress,
+          tokenProgram: TOKEN_PROGRAM_ID,
+          rewarderProgram: REWARDER_PROGRAM_ID,
+        })
+        .instruction(),
+    );
+
+    return this.sendSmartTransaction(
+      instructions,
       [],
       altAccounts,
       priorityLevel,

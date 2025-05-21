@@ -15,6 +15,7 @@ pub struct VestingConfig {
 
     pub initial_unlock_bps: u16,
     pub total_capacity: u64,
+    pub total_amount: u64,
     pub total_claimed: u64,
 
     pub active_pools: u32,

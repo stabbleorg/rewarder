@@ -26,6 +26,7 @@ pub fn process_create_config(
         release_interval,
         initial_unlock_bps,
         total_capacity,
+        total_amount: 0,
         total_claimed: 0,
         active_pools: 0,
     });

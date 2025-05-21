@@ -1,5 +1,6 @@
 import BN from "bn.js";
 import { PublicKey } from "@solana/web3.js";
+import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 import { SafeAmount } from "@stabbleorg/anchor-contrib";
 import { VestingPool } from "./pool";
 import { VestoContext } from "../../programs";
@@ -45,6 +46,18 @@ export class VestingPosition {
     return SafeAmount.toUiAmount(
       this.data.claimed,
       this.pool.config.governo.data.decimals,
+    );
+  }
+
+  getAssociatedTokenAddress(
+    mintAddress: PublicKey,
+    programId?: PublicKey,
+  ): PublicKey {
+    return getAssociatedTokenAddressSync(
+      mintAddress,
+      this.address,
+      true,
+      programId,
     );
   }
 }
