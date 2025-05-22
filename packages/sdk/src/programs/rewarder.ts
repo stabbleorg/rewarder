@@ -98,6 +98,21 @@ export class RewarderContext<
     return new Pool(rewarder, poolAddress, data);
   }
 
+  async loadPoolsByRewarder(rewarder: Rewarder): Promise<Pool[]> {
+    const accounts = await this.program.account.pool.all([
+      {
+        memcmp: {
+          offset: 8,
+          bytes: rewarder.address.toBase58(),
+        },
+      },
+    ]);
+
+    return accounts.map(
+      ({ publicKey, account }) => new Pool(rewarder, publicKey, account),
+    );
+  }
+
   async loadPools(rewarders: Map<string, Rewarder>): Promise<Pool[]> {
     const accounts = await this.program.account.pool.all();
 

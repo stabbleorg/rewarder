@@ -10,12 +10,13 @@ skip-lint = false
 [programs.localnet]
 governo = "gov3LSmekCKmzLnKJ87csYdef5QNYM2G3kNDbhZekkA"
 rewarder = "rev31KMq4qzt1y1iw926p694MHVVWT57caQrsHLFA4x"
+vesto = "1ok3Ge8vXYPeQgwJd5GBQZkXqW34TbpkvP1APiDVtUF"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "Localnet"
+cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
 [workspace]

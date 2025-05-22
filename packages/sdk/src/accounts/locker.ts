@@ -1,9 +1,6 @@
 import BN from "bn.js";
 import { PublicKey } from "@solana/web3.js";
-import {
-  getAssociatedTokenAddressSync,
-  TOKEN_PROGRAM_ID,
-} from "@solana/spl-token";
+import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 import { SafeAmount } from "@stabbleorg/anchor-contrib";
 import { Governo } from "./governo";
 import { GovernoContext } from "../programs";
@@ -73,7 +70,7 @@ export class Locker {
 
   getAssociatedTokenAddress(
     mintAddress: PublicKey,
-    programId: PublicKey = TOKEN_PROGRAM_ID,
+    programId?: PublicKey,
   ): PublicKey {
     return getAssociatedTokenAddressSync(
       mintAddress,

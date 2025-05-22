@@ -5,9 +5,9 @@ import {
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import { SafeAmount } from "@stabbleorg/anchor-contrib";
+import { Rewarder } from "./rewarder";
 import { Pool } from "./pool";
 import { RewarderContext } from "../programs";
-import { Rewarder } from "./rewarder";
 
 export type MinerData = {
   pool: PublicKey;
