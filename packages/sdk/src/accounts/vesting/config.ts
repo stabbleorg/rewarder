@@ -82,6 +82,26 @@ export class VestingConfig {
     return this.data.initialUnlockBps / 1e4;
   }
 
+  get releasedRate(): number {
+    const timestamp = Math.floor(new Date().getTime() / 1000);
+
+    const startTime = this.data.vestingStartTime.toNumber();
+    const endTime = this.data.vestingEndTime.toNumber();
+    const duration = this.data.vestingDuration.toNumber();
+
+    if (timestamp >= endTime) {
+      return 1;
+    } else if (timestamp > startTime) {
+      const elapsedTime = timestamp - startTime;
+      return (
+        this.initialUnlockRate +
+        (1 - this.initialUnlockRate) * (elapsedTime / duration)
+      );
+    } else {
+      return this.initialUnlockRate;
+    }
+  }
+
   getAssociatedTokenAddress(
     mintAddress: PublicKey,
     programId?: PublicKey,
