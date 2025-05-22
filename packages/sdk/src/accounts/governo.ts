@@ -67,6 +67,18 @@ export class Governo {
     );
   }
 
+  get minLockDuration(): number {
+    return this.data.minLockDuration;
+  }
+
+  get maxLockDuration(): number {
+    return this.data.maxLockDuration;
+  }
+
+  get maxLock(): number {
+    return this.data.maxLockDuration / this.data.minLockDuration;
+  }
+
   getAssociatedTokenAddress(
     mintAddress: PublicKey,
     programId: PublicKey = TOKEN_PROGRAM_ID,
