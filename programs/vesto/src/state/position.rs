@@ -31,3 +31,34 @@ where
         ])
     }
 }
+
+#[derive(AnchorSerialize, AnchorDeserialize)]
+pub struct VestingPositionUpdatedData {
+    pub amount: u64,
+    pub claimed: u64,
+}
+
+#[event]
+pub struct VestingPositionUpdatedEvent {
+    pub pubkey: Pubkey,
+    pub data: VestingPositionUpdatedData,
+}
+
+pub trait EmitVestingPositionUpdated {
+    fn emit_vesting_position_updated(&self);
+}
+
+impl<T> EmitVestingPositionUpdated for T
+where
+    T: Located<VestingPosition>,
+{
+    fn emit_vesting_position_updated(&self) {
+        emit!(VestingPositionUpdatedEvent {
+            pubkey: self.key(),
+            data: VestingPositionUpdatedData {
+                amount: self.as_ref().amount,
+                claimed: self.as_ref().claimed,
+            },
+        });
+    }
+}

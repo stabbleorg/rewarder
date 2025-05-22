@@ -58,6 +58,7 @@ pub fn process_redeem_position(ctx: Context<RedeemPosition>) -> Result<()> {
         ctx.accounts.config.total_claimed += redemption;
         ctx.accounts.pool.total_redeemed += redemption;
         ctx.accounts.position.claimed = released_amount;
+        ctx.accounts.position.emit_vesting_position_updated();
 
         ctx.accounts.position.authority_seeds(|signer_seed| {
             burn(

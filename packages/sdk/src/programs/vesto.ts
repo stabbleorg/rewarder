@@ -17,6 +17,8 @@ import {
   WalletContext,
   SafeAmount,
   FloatLike,
+  DataUpdatedEvent,
+  SIMULATED_SIGNATURE,
 } from "@stabbleorg/anchor-contrib";
 import {
   Governo,
@@ -25,6 +27,7 @@ import {
   VestingConfig,
   VestingPool,
   VestingPosition,
+  VestingPositionData,
 } from "../accounts";
 import { REWARDER_PROGRAM_ID, RewarderContext } from "./rewarder";
 import REWARDER_PROGRAM_IDL from "../generated/idl/rewarder.json";
@@ -504,5 +507,37 @@ export class VestoContext<
       ],
       VESTO_PROGRAM_ID,
     )[0];
+  }
+}
+
+export class VestoListener {
+  private positionUpdatedEvent: number = -1;
+
+  constructor(readonly program: VestoProgram) {}
+
+  addPositionListeners(
+    callback: (event: DataUpdatedEvent<Partial<VestingPositionData>>) => void,
+  ) {
+    this.removePositionListeners();
+
+    this.positionUpdatedEvent = this.program.addEventListener(
+      "vestingPositionUpdatedEvent",
+      (
+        event: DataUpdatedEvent<Partial<VestingPositionData>>,
+        _slot: number,
+        signature: TransactionSignature,
+      ) => {
+        if (signature !== SIMULATED_SIGNATURE) {
+          callback(event);
+        }
+      },
+    );
+  }
+
+  removePositionListeners() {
+    if (this.positionUpdatedEvent !== -1) {
+      this.program.removeEventListener(this.positionUpdatedEvent);
+      this.positionUpdatedEvent = -1;
+    }
   }
 }
