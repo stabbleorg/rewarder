@@ -203,18 +203,18 @@ export class VestoContext<
   }>): Promise<TransactionSignature> {
     return this.sendSmartTransaction(
       [
-        await this.program.methods
-          .updateVestingPeriod(
-            new BN(Math.trunc(initialUnlockDate.getTime() / 1000)),
-            new BN(Math.trunc(vestingStartDate.getTime() / 1000)),
-            new BN(Math.trunc(vestingEndDate.getTime() / 1000)),
-          )
-          .accountsStrict({
-            admin: config.governo.data.admin,
-            governo: config.governo.address,
-            config: config.address,
-          })
-          .instruction(),
+        // await this.program.methods
+        //   .updateVestingPeriod(
+        //     new BN(Math.trunc(initialUnlockDate.getTime() / 1000)),
+        //     new BN(Math.trunc(vestingStartDate.getTime() / 1000)),
+        //     new BN(Math.trunc(vestingEndDate.getTime() / 1000)),
+        //   )
+        //   .accountsStrict({
+        //     admin: config.governo.data.admin,
+        //     governo: config.governo.address,
+        //     config: config.address,
+        //   })
+        //   .instruction(),
       ],
       [],
       altAccounts,
