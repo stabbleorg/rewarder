@@ -1,3 +1,4 @@
+pub mod error;
 pub mod processor;
 pub mod state;
 
@@ -36,12 +37,22 @@ pub mod rewarder {
     }
 
     #[access_control(ctx.accounts.validate())]
+    pub fn close_rewarder(ctx: Context<CloseRewarder>) -> Result<()> {
+        process_close_rewarder(ctx)
+    }
+
+    #[access_control(ctx.accounts.validate())]
     pub fn create_pool(ctx: Context<CreatePool>, weight: u32) -> Result<()> {
         process_create_pool(ctx, weight)
     }
 
     pub fn update_pool(ctx: Context<UpdatePool>, weight: u32) -> Result<()> {
         process_update_pool(ctx, weight)
+    }
+
+    #[access_control(ctx.accounts.validate())]
+    pub fn close_pool(ctx: Context<ClosePool>) -> Result<()> {
+        process_close_pool(ctx)
     }
 
     pub fn create_miner(ctx: Context<CreateMiner>, user: Pubkey) -> Result<()> {
@@ -74,7 +85,7 @@ pub mod rewarder {
     }
 
     #[access_control(ctx.accounts.validate())]
-    pub fn claim_miner(ctx: Context<ClaimMiner>) -> Result<()> {
+    pub fn claim_miner<'a, 'b, 'c, 'info>(ctx: Context<'_, '_, '_, 'info, ClaimMiner<'info>>) -> Result<()> {
         process_claim_miner(ctx)
     }
 }

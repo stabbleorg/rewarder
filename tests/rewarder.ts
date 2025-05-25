@@ -1,5 +1,5 @@
 import { assert } from "chai";
-import { AnchorError, AnchorProvider } from "@coral-xyz/anchor";
+import { AnchorProvider } from "@coral-xyz/anchor";
 import {
   createAssociatedTokenAccount,
   createMint,
@@ -42,7 +42,7 @@ describe("rewarder", () => {
       PAYER_KEYPAIR,
       PAYER_KEYPAIR.publicKey,
       null,
-      6,
+      9,
       REWARD_MINT_KEYPAIR,
     );
     await mintTo(
@@ -56,7 +56,7 @@ describe("rewarder", () => {
         provider.publicKey,
       ),
       PAYER_KEYPAIR,
-      BigInt("1000000000000"), // 1M
+      BigInt("1000000000000000"), // 1M
     );
 
     await createMint(
@@ -84,7 +84,7 @@ describe("rewarder", () => {
 
   it("should create a rewarder", async () => {
     const time = Date.now();
-    const totalRewards = 500000; // 500K
+    const totalRewards = 1000000; // 1M
 
     const { address, signature } = await rewarderContext.createRewarder({
       mintAddress: REWARD_MINT_KEYPAIR.publicKey,
@@ -109,7 +109,7 @@ describe("rewarder", () => {
     const { address, signature } = await rewarderContext.createPool({
       rewarderAddress,
       mintAddress: LP_MINT_KEYPAIR.publicKey,
-      weight: 1,
+      weight: 1000000,
     });
 
     await provider.connection.confirmTransaction({
@@ -119,8 +119,10 @@ describe("rewarder", () => {
 
     const pool = await rewarderContext.loadPool(address);
     assert.deepEqual(pool.mintAddress, LP_MINT_KEYPAIR.publicKey);
-    assert.equal(pool.weight, 1);
-    assert.equal(pool.dailyRewards, 0);
+    assert.equal(pool.weight, 1000000);
+    assert.equal(pool.dailyRewardsPerAmount, 0);
+    assert.equal(pool.weeklyRewardsPerAmount, 0);
+    assert.equal(pool.monthlyRewardsPerAmount, 0);
 
     poolAddress = address;
   });
@@ -144,13 +146,15 @@ describe("rewarder", () => {
     assert.equal(governo.totalLockedAmount, 0);
 
     governoAddress = address;
+
+    await governoContext.updateRewarder({ governo, rewarderAddress });
   });
 
   it("should create a pool for governo", async () => {
     const { address, signature } = await rewarderContext.createPool({
       rewarderAddress,
       mintAddress: VE_MINT_KEYPAIR.publicKey,
-      weight: 1,
+      weight: 1000000,
     });
 
     await provider.connection.confirmTransaction({
@@ -160,8 +164,10 @@ describe("rewarder", () => {
 
     const pool = await rewarderContext.loadPool(address);
     assert.deepEqual(pool.mintAddress, VE_MINT_KEYPAIR.publicKey);
-    assert.equal(pool.weight, 1);
-    assert.equal(pool.dailyRewards, 0);
+    assert.equal(pool.weight, 1000000);
+    assert.equal(pool.dailyRewardsPerAmount, 0);
+    assert.equal(pool.weeklyRewardsPerAmount, 0);
+    assert.equal(pool.monthlyRewardsPerAmount, 0);
 
     vePoolAddress = address;
 
@@ -312,8 +318,10 @@ describe("rewarder", () => {
 
   it("should claim rewards", async () => {
     const pool = await rewarderContext.loadPool(poolAddress);
+    const miner = await rewarderContext.loadMiner(pool);
 
-    const signature = await rewarderContext.claim({ pool });
+    assert.isNotNull(miner);
+    const signature = await rewarderContext.claim({ miners: [miner] });
 
     await provider.connection.confirmTransaction({
       ...(await provider.connection.getLatestBlockhash()),
@@ -321,15 +329,17 @@ describe("rewarder", () => {
     });
 
     const reloadedPool = await rewarderContext.loadPool(poolAddress);
-    const miner = await rewarderContext.loadMiner(reloadedPool);
-    assert.isNotNull(miner);
+    const reloadedMiner = await rewarderContext.loadMiner(reloadedPool);
+    assert.isNotNull(reloadedMiner);
     assert.deepEqual(
-      miner.rewardsClaimed,
-      miner.pool.rewarder.totalRewardsClaimed,
+      reloadedMiner.rewardsClaimed,
+      reloadedMiner.pool.rewarder.totalRewardsClaimed,
     );
   });
 
   it("should claim locker rewards", async () => {
+    await sleep(2_000);
+
     const governo = await governoContext.loadGoverno(governoAddress);
     const lockers = await governoContext.loadLockers(governo);
     const locker = lockers[0];

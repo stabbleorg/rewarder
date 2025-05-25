@@ -1,3 +1,4 @@
+pub mod error;
 pub mod processor;
 pub mod state;
 
@@ -21,6 +22,11 @@ pub mod governo {
     }
 
     #[access_control(ctx.accounts.validate())]
+    pub fn close_governo(ctx: Context<CloseGoverno>) -> Result<()> {
+        Ok(())
+    }
+
+    #[access_control(ctx.accounts.validate())]
     pub fn create_locker(ctx: Context<CreateLocker>, amount: u64, duration: u32) -> Result<()> {
         process_create_locker(ctx, amount, duration)
     }
@@ -38,7 +44,7 @@ pub mod governo {
         process_unstake_locker(ctx)
     }
 
-    pub fn claim_locker(ctx: Context<ClaimLocker>) -> Result<()> {
+    pub fn claim_locker<'a, 'b, 'c, 'info>(ctx: Context<'_, '_, '_, 'info, ClaimLocker<'info>>) -> Result<()> {
         process_claim_locker(ctx)
     }
 }

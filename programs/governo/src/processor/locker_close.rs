@@ -1,4 +1,4 @@
-use crate::state::*;
+use crate::{error::GovernoError, state::*};
 use anchor_common::validate::Validate;
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{
@@ -8,6 +8,7 @@ use anchor_spl::token_interface::{
 pub fn process_close_locker(ctx: Context<CloseLocker>) -> Result<()> {
     ctx.accounts.governo.total_locked_amount -= ctx.accounts.locker.locked_amount;
     ctx.accounts.governo.total_voting_weight -= ctx.accounts.locker.voting_weight;
+    ctx.accounts.governo.emit_governo_updated();
 
     ctx.accounts.locker.authority_seeds(|signer_seed| {
         transfer_checked(
@@ -130,7 +131,11 @@ impl<'info> Validate<'info> for CloseLocker<'info> {
         assert_eq!(self.ve_mint.to_account_info().owner.key(), self.token_program.key());
 
         require_gte!(self.locker_ve_token.amount, self.locker.voting_weight);
-        require_gte!(Clock::get()?.unix_timestamp, self.locker.unlocks_at);
+        require_gte!(
+            Clock::get()?.unix_timestamp,
+            self.locker.unlocks_at,
+            GovernoError::LockerActive
+        );
 
         Ok(())
     }

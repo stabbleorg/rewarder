@@ -42,6 +42,8 @@ pub fn process_update_rewarder(
     ctx.accounts.rewarder.epoch_duration = epoch_ends_at - epoch_starts_at;
     ctx.accounts.rewarder.last_updated_at = epoch_starts_at;
 
+    ctx.accounts.rewarder.emit_rewarder_updated();
+
     Ok(())
 }
 

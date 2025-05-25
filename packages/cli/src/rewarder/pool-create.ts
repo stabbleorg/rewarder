@@ -24,7 +24,7 @@ export function createPool(program: Command) {
         weight: number;
         poolKP?: Keypair;
       }) => {
-        const { provider, priorityLevel } = useContext();
+        const { provider, priorityLevel, simulate } = useContext();
 
         const rewarderContext = new RewarderContext(provider);
 
@@ -34,6 +34,7 @@ export function createPool(program: Command) {
           weight,
           keypair: poolKP,
           priorityLevel,
+          simulate,
         });
 
         console.log("Pool:", address.toBase58());

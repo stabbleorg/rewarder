@@ -1,4 +1,5 @@
 import {
+  AccountMeta,
   Keypair,
   PublicKey,
   SystemProgram,
@@ -21,18 +22,23 @@ import {
 import { Program, Provider } from "@coral-xyz/anchor";
 import {
   AddressWithTransactionSignature,
-  SafeAmount,
-  TOKEN_MINT_RENT_FEE_LAMPORTS,
   TransactionArgs,
   WalletContext,
+  SafeAmount,
+  DataUpdatedEvent,
+  SIMULATED_SIGNATURE,
+  TOKEN_MINT_RENT_FEE_LAMPORTS,
 } from "@stabbleorg/anchor-contrib";
-import { Governo, Locker, Miner, Pool } from "../accounts";
+import { Governo, GovernoData, Locker, Miner, Pool } from "../accounts";
 import { type Governo as IDLType } from "../generated/governo";
 import IDL from "../generated/idl/governo.json";
 import REWARDER_PROGRAM_IDL from "../generated/idl/rewarder.json";
 import { REWARDER_PROGRAM_ID, RewarderContext } from "./rewarder";
 
 export const GOVERNO_PROGRAM_ID = new PublicKey(IDL.address);
+export const GOVERNO_ERRORS = new Map(
+  IDL.errors.map((error) => [error.code, error.msg]),
+);
 
 export type GovernoProgram = Program<IDLType>;
 
@@ -72,7 +78,7 @@ export class GovernoContext<
     ]);
 
     return accounts.map(
-      (account) => new Locker(governo, account.publicKey, account.account),
+      ({ publicKey, account }) => new Locker(governo, publicKey, account),
     );
   }
 
@@ -86,6 +92,7 @@ export class GovernoContext<
     altAccounts,
     priorityLevel,
     maxPriorityMicroLamports,
+    simulate,
   }: TransactionArgs<{
     mintAddress: PublicKey;
     minLockDuration: number;
@@ -199,9 +206,73 @@ export class GovernoContext<
       altAccounts,
       priorityLevel,
       maxPriorityMicroLamports,
+      simulate,
     );
 
     return { address, signature };
+  }
+
+  async updateRewarder({
+    governo,
+    rewarderAddress,
+    altAccounts,
+    priorityLevel,
+    maxPriorityMicroLamports,
+    simulate,
+  }: TransactionArgs<{
+    governo: Governo;
+    rewarderAddress: PublicKey;
+  }>): Promise<TransactionSignature> {
+    return this.sendSmartTransaction(
+      [
+        await this.program.methods
+          .updateRewarder()
+          .accountsStrict({
+            admin: governo.data.admin,
+            governo: governo.address,
+          })
+          .remainingAccounts([
+            {
+              pubkey: rewarderAddress,
+              isSigner: false,
+              isWritable: false,
+            },
+          ])
+          .instruction(),
+      ],
+      [],
+      altAccounts,
+      priorityLevel,
+      maxPriorityMicroLamports,
+      simulate,
+    );
+  }
+
+  async closeGoverno({
+    governo,
+    altAccounts,
+    priorityLevel,
+    maxPriorityMicroLamports,
+    simulate,
+  }: TransactionArgs<{
+    governo: Governo;
+  }>): Promise<TransactionSignature> {
+    return this.sendSmartTransaction(
+      [
+        await this.program.methods
+          .closeGoverno()
+          .accountsStrict({
+            admin: governo.data.admin,
+            governo: governo.address,
+          })
+          .instruction(),
+      ],
+      [],
+      altAccounts,
+      priorityLevel,
+      maxPriorityMicroLamports,
+      simulate,
+    );
   }
 
   async lock({
@@ -213,6 +284,7 @@ export class GovernoContext<
     altAccounts,
     priorityLevel,
     maxPriorityMicroLamports,
+    simulate,
   }: TransactionArgs<{
     pool: Pool;
     governo: Governo;
@@ -222,6 +294,9 @@ export class GovernoContext<
   }>): Promise<AddressWithTransactionSignature> {
     if (!governo.veMintAddress.equals(pool.mintAddress))
       throw new Error("Invalid pool account");
+
+    if (!governo.rewarderAddress.equals(pool.rewarder.address))
+      throw new Error("Invalid rewarder account");
 
     const instructions: TransactionInstruction[] = [];
 
@@ -238,7 +313,6 @@ export class GovernoContext<
     } = await this.getOrCreateAssociatedTokenAddressInstruction(
       governo.govMintAddress,
       authorityAddress,
-      true,
     );
     if (createLockerGovAtaIX) instructions.push(createLockerGovAtaIX);
 
@@ -246,7 +320,6 @@ export class GovernoContext<
       await this.getOrCreateAssociatedTokenAddressInstruction(
         governo.veMintAddress,
         authorityAddress,
-        true,
       );
     if (createLockerVeAtaIX) instructions.push(createLockerVeAtaIX);
 
@@ -307,7 +380,6 @@ export class GovernoContext<
       await this.getOrCreateAssociatedTokenAddressInstruction(
         pool.mintAddress,
         minerAddress,
-        true,
       );
     if (createMinerVeAtaIX) instructions.push(createMinerVeAtaIX);
 
@@ -336,6 +408,7 @@ export class GovernoContext<
       altAccounts,
       priorityLevel,
       maxPriorityMicroLamports,
+      simulate,
     );
 
     return { address, signature };
@@ -347,6 +420,7 @@ export class GovernoContext<
     altAccounts,
     priorityLevel,
     maxPriorityMicroLamports,
+    simulate,
   }: TransactionArgs<{
     pool: Pool;
     locker: Locker;
@@ -359,10 +433,8 @@ export class GovernoContext<
       pool.address,
     );
 
-    const lockerVeTokenAddress = getAssociatedTokenAddressSync(
+    const lockerVeTokenAddress = locker.getAssociatedTokenAddress(
       locker.governo.veMintAddress,
-      locker.authorityAddress,
-      true,
     );
 
     const minerVeTokenAddress = getAssociatedTokenAddressSync(
@@ -396,10 +468,8 @@ export class GovernoContext<
       );
     if (createUserGovAtaIX) instructions.push(createUserGovAtaIX);
 
-    const lockerGovTokenAddress = getAssociatedTokenAddressSync(
+    const lockerGovTokenAddress = locker.getAssociatedTokenAddress(
       locker.governo.govMintAddress,
-      locker.authorityAddress,
-      true,
     );
 
     instructions.push(
@@ -426,6 +496,7 @@ export class GovernoContext<
       altAccounts,
       priorityLevel,
       maxPriorityMicroLamports,
+      simulate,
     );
   }
 
@@ -435,6 +506,7 @@ export class GovernoContext<
     altAccounts,
     priorityLevel,
     maxPriorityMicroLamports,
+    simulate,
   }: TransactionArgs<{
     miner: Miner;
     locker: Locker;
@@ -455,11 +527,10 @@ export class GovernoContext<
     if (createAuthorityRewardAtaIX)
       instructions.push(createAuthorityRewardAtaIX);
 
-    const rewarderRewardTokenAddress = getAssociatedTokenAddressSync(
-      miner.pool.rewarder.mintAddress,
-      miner.pool.rewarder.authorityAddress,
-      true,
-    );
+    const rewarderRewardTokenAddress =
+      miner.pool.rewarder.getAssociatedTokenAddress(
+        miner.pool.rewarder.mintAddress,
+      );
 
     instructions.push(
       await this.program.methods
@@ -486,6 +557,7 @@ export class GovernoContext<
       altAccounts,
       priorityLevel,
       maxPriorityMicroLamports,
+      simulate,
     );
   }
 
@@ -501,5 +573,37 @@ export class GovernoContext<
       [Buffer.from("locker_authority"), lockerAddress.toBuffer()],
       GOVERNO_PROGRAM_ID,
     )[0];
+  }
+}
+
+export class GovernoListener {
+  private governoUpdatedEvent: number = -1;
+
+  constructor(readonly program: GovernoProgram) {}
+
+  addRewarderListeners(
+    callback: (event: DataUpdatedEvent<Partial<GovernoData>>) => void,
+  ) {
+    this.removeGovernoListeners();
+
+    this.governoUpdatedEvent = this.program.addEventListener(
+      "governoUpdatedEvent",
+      (
+        event: DataUpdatedEvent<Partial<GovernoData>>,
+        _slot: number,
+        signature: TransactionSignature,
+      ) => {
+        if (signature !== SIMULATED_SIGNATURE) {
+          callback(event);
+        }
+      },
+    );
+  }
+
+  removeGovernoListeners() {
+    if (this.governoUpdatedEvent !== -1) {
+      this.program.removeEventListener(this.governoUpdatedEvent);
+      this.governoUpdatedEvent = -1;
+    }
   }
 }

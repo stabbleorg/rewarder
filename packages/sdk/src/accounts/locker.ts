@@ -1,5 +1,6 @@
 import BN from "bn.js";
 import { PublicKey } from "@solana/web3.js";
+import { getAssociatedTokenAddressSync } from "@solana/spl-token";
 import { SafeAmount } from "@stabbleorg/anchor-contrib";
 import { Governo } from "./governo";
 import { GovernoContext } from "../programs";
@@ -7,7 +8,7 @@ import { GovernoContext } from "../programs";
 export type LockerData = {
   governo: PublicKey;
   authority: PublicKey;
-  authorityBump: number;
+  // authorityBump: number;
   lockedAmount: BN;
   votingWeight: BN;
   votingWeightUsed: BN;
@@ -16,14 +17,26 @@ export type LockerData = {
 };
 
 export class Locker {
+  public data: LockerData;
+
   constructor(
     readonly governo: Governo,
     readonly address: PublicKey,
-    readonly data: LockerData,
-  ) {}
+    data: LockerData,
+  ) {
+    this.data = data;
+  }
+
+  refreshData(updatedData: Partial<LockerData>) {
+    this.data = { ...this.data, ...updatedData };
+  }
 
   get authorityAddress(): PublicKey {
     return GovernoContext.getLockerAuthorityAddress(this.address);
+  }
+
+  get ownerAddress(): PublicKey {
+    return this.data.authority;
   }
 
   get lockedAmount(): number {
@@ -53,5 +66,17 @@ export class Locker {
 
   get unlocksAt(): Date {
     return new Date(this.data.unlocksAt.toNumber() * 1000);
+  }
+
+  getAssociatedTokenAddress(
+    mintAddress: PublicKey,
+    programId?: PublicKey,
+  ): PublicKey {
+    return getAssociatedTokenAddressSync(
+      mintAddress,
+      this.authorityAddress,
+      true,
+      programId,
+    );
   }
 }

@@ -1,4 +1,4 @@
-use crate::state::*;
+use crate::{error::GovernoError, state::*};
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::TokenAccount;
 use rewarder::{
@@ -11,7 +11,11 @@ use rewarder::{
 
 pub fn process_stake_locker(ctx: Context<UpdateLocker>) -> Result<()> {
     require_keys_eq!(ctx.accounts.rewarder.key(), ctx.accounts.governo.rewarder.unwrap());
-    require_gt!(ctx.accounts.locker.unlocks_at, Clock::get()?.unix_timestamp);
+    require_gt!(
+        ctx.accounts.locker.unlocks_at,
+        Clock::get()?.unix_timestamp,
+        GovernoError::LockerExpired
+    );
 
     ctx.accounts.locker.authority_seeds(|signer_seed| {
         deposit_miner(
@@ -37,7 +41,11 @@ pub fn process_stake_locker(ctx: Context<UpdateLocker>) -> Result<()> {
 }
 
 pub fn process_unstake_locker(ctx: Context<UpdateLocker>) -> Result<()> {
-    require_gt!(Clock::get()?.unix_timestamp, ctx.accounts.locker.unlocks_at);
+    require_gt!(
+        Clock::get()?.unix_timestamp,
+        ctx.accounts.locker.unlocks_at,
+        GovernoError::LockerActive
+    );
 
     ctx.accounts.locker.authority_seeds(|signer_seed| {
         withdraw_miner(
@@ -62,7 +70,7 @@ pub fn process_unstake_locker(ctx: Context<UpdateLocker>) -> Result<()> {
     })
 }
 
-pub fn process_claim_locker(ctx: Context<ClaimLocker>) -> Result<()> {
+pub fn process_claim_locker<'a, 'b, 'c, 'info>(ctx: Context<'_, '_, '_, 'info, ClaimLocker<'info>>) -> Result<()> {
     ctx.accounts.locker.authority_seeds(|signer_seed| {
         claim_miner(
             CpiContext::new(
@@ -81,7 +89,8 @@ pub fn process_claim_locker(ctx: Context<ClaimLocker>) -> Result<()> {
                     token_program: ctx.accounts.token_program.to_account_info(),
                 },
             )
-            .with_signer(&[signer_seed]),
+            .with_signer(&[signer_seed])
+            .with_remaining_accounts(ctx.remaining_accounts.to_vec()),
         )
     })
 }

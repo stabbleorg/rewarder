@@ -8,17 +8,18 @@ import {
   PublicKey,
   clusterApiUrl,
 } from "@solana/web3.js";
-import { setupGovernoProgram } from "./governo";
 import { setupRewarderProgram } from "./rewarder";
+import { setupGovernoProgram } from "./governo";
+import { setupVestoProgram } from "./vesto";
 import { setContext } from "./context";
 import { parseKeypair } from "./utils";
 
 program
-  .version("2.0.0")
+  .version("0.12.0")
   .option("-k, --keypair <path>", "wallet keypair", parseKeypair)
   .option("-u, --url <string>", "RPC monk or url", "devnet")
-  .option("-p, --priority-level <string...>", "priority fee level", "High")
   .option("-a, --alt-keys <string...>", "Address Lookup Table keys")
+  .option("-p, --priority-level <string>", "priority fee level", "High")
   .option("-s, --simulate", "simulate transaction")
   .hook("preAction", async (cmd: Command) => {
     const { keypair, url, priorityLevel, altKeys, simulate } = cmd.opts();
@@ -64,6 +65,7 @@ program
 
 setupGovernoProgram(program);
 setupRewarderProgram(program);
+setupVestoProgram(program);
 
 program
   .parseAsync(process.argv)

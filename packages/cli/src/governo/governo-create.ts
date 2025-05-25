@@ -2,7 +2,7 @@ import type { Command } from "commander";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { GovernoContext } from "@stabbleorg/rewarder-sdk";
 import { useContext } from "../context";
-import { parseDate, parseKey, parseKeypair } from "../utils";
+import { parseKey, parseKeypair } from "../utils";
 
 export function createGoverno(program: Command) {
   program
@@ -36,7 +36,7 @@ export function createGoverno(program: Command) {
         veMintKP?: Keypair;
         governoKP?: Keypair;
       }) => {
-        const { provider, priorityLevel } = useContext();
+        const { provider, priorityLevel, simulate } = useContext();
 
         const governoContext = new GovernoContext(provider);
 
@@ -52,6 +52,7 @@ export function createGoverno(program: Command) {
           veMintKeypair: veMintKP,
           keypair: governoKP,
           priorityLevel,
+          simulate,
         });
 
         console.log("Governo:", address.toBase58());
