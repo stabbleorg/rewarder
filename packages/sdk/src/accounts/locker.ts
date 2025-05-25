@@ -46,6 +46,13 @@ export class Locker {
     );
   }
 
+  get weight(): number {
+    return SafeAmount.toUiAmount(
+      this.data.votingWeight,
+      this.governo.data.decimals,
+    );
+  }
+
   get votingWeight(): number {
     return SafeAmount.toUiAmount(
       this.data.votingWeight.sub(this.data.votingWeightUsed),

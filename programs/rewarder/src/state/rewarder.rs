@@ -40,7 +40,7 @@ pub struct Rewarder {
     /// Unix timestamp marking the end of the current epoch.
     pub epoch_ends_at: i64,
 
-    ///
+    /// Pre-calculated epoch duration.
     pub epoch_duration: i64,
 
     /// Unix timestamp of the last update to the reward distribution.
