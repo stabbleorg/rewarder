@@ -1,6 +1,6 @@
 {
   "name": "@stabbleorg/rewarder-cli",
-  "version": "0.12.1",
+  "version": "0.12.3",
   "main": "src",
   "types": "src/index.d.ts",
   "license": "MIT",
@@ -12,7 +12,7 @@
     "@solana/spl-token": "^0.4.13",
     "@solana/web3.js": "^1.98.0",
     "@stabbleorg/anchor-contrib": "^2.4.0",
-    "@stabbleorg/rewarder-sdk": "^0.12.1",
+    "@stabbleorg/rewarder-sdk": "^0.12.3",
     "bs58": "^6.0.0",
     "commander": "^11.0.0",
     "helius-sdk": "^1.3.5",

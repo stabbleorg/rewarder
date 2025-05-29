@@ -61,12 +61,14 @@ export class Miner {
 
   get rewards(): number {
     const currentTime = Math.trunc(new Date().getTime() / 1000);
+
+    const epochEndTime = this.pool.rewarder.data.epochEndsAt.toNumber();
     const lastUpdatedTime = this.pool.rewarder.data.lastUpdatedAt.toNumber();
 
     let rewardsPerWeight = this.pool.rewarder.data.rewardsPerWeight;
 
     if (currentTime > lastUpdatedTime) {
-      const elapsedTime = currentTime - lastUpdatedTime;
+      const elapsedTime = Math.min(currentTime, epochEndTime) - lastUpdatedTime;
 
       if (this.pool.rewarder.data.totalWeights.gt(new BN(0))) {
         rewardsPerWeight = this.pool.rewarder.data.totalRewards

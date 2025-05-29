@@ -1,6 +1,6 @@
 {
   "name": "@stabbleorg/rewarder-sdk",
-  "version": "0.12.1",
+  "version": "0.12.3",
   "main": "src",
   "types": "src/index.d.ts",
   "license": "MIT",
