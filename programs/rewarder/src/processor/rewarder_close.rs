@@ -1,7 +1,9 @@
 use crate::state::*;
 use anchor_common::validate::Validate;
 use anchor_lang::prelude::*;
-use anchor_spl::token_interface::{close_account, transfer_checked, CloseAccount, Mint, TokenAccount, TransferChecked};
+use anchor_spl::token_interface::{
+    close_account, transfer_checked, CloseAccount, Mint, TokenAccount, TokenInterface, TransferChecked,
+};
 
 pub fn process_close_rewarder(ctx: Context<CloseRewarder>) -> Result<()> {
     ctx.accounts.rewarder.authority_seeds(|signer_seed| {
@@ -60,8 +62,7 @@ pub struct CloseRewarder<'info> {
     )]
     pub rewarder_token: InterfaceAccount<'info, TokenAccount>,
 
-    /// CHECK: OK
-    pub token_program: UncheckedAccount<'info>,
+    pub token_program: Interface<'info, TokenInterface>,
 }
 
 impl<'info> Validate<'info> for CloseRewarder<'info> {

@@ -5,7 +5,8 @@ use anchor_common::{
 };
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{
-    burn_checked, close_account, transfer_checked, BurnChecked, CloseAccount, Mint, TokenAccount, TransferChecked,
+    burn_checked, close_account, transfer_checked, BurnChecked, CloseAccount, Mint, TokenAccount, TokenInterface,
+    TransferChecked,
 };
 
 pub fn process_deposit_miner(ctx: Context<UpdateMiner>, amount: u64) -> Result<()> {
@@ -223,8 +224,7 @@ pub struct UpdateMiner<'info> {
     )]
     pub miner_token: InterfaceAccount<'info, TokenAccount>,
 
-    /// CHECK: OK
-    pub token_program: UncheckedAccount<'info>,
+    pub token_program: Interface<'info, TokenInterface>,
 }
 
 impl<'info> Validate<'info> for UpdateMiner<'info> {
@@ -258,8 +258,7 @@ pub struct UpdateDerivedMiner<'info> {
     )]
     pub miner_token: InterfaceAccount<'info, TokenAccount>,
 
-    /// CHECK: OK
-    pub token_program: UncheckedAccount<'info>,
+    pub token_program: Interface<'info, TokenInterface>,
 }
 
 impl<'info> Validate<'info> for UpdateDerivedMiner<'info> {
@@ -298,8 +297,7 @@ pub struct ClaimMiner<'info> {
     )]
     pub rewarder_token: InterfaceAccount<'info, TokenAccount>,
 
-    /// CHECK: OK
-    pub token_program: UncheckedAccount<'info>,
+    pub token_program: Interface<'info, TokenInterface>,
 }
 
 impl<'info> Validate<'info> for ClaimMiner<'info> {
