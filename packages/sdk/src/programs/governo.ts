@@ -462,6 +462,65 @@ export class GovernoContext<
         .instruction(),
     ];
 
+    const {
+      address: authorityTokenAddress,
+      instruction: createAuthorityRewardAtaIX,
+    } = await this.getOrCreateAssociatedTokenAddressInstruction(
+      pool.rewarder.mintAddress,
+      locker.ownerAddress,
+    );
+    if (createAuthorityRewardAtaIX)
+      instructions.push(createAuthorityRewardAtaIX);
+
+    const rewarderRewardTokenAddress = pool.rewarder.getAssociatedTokenAddress(
+      pool.rewarder.mintAddress,
+    );
+
+    instructions.push(
+      await this.program.methods
+        .claimLocker()
+        .accountsStrict({
+          locker: locker.address,
+          lockerAuthority: locker.authorityAddress,
+          rewarderProgram: REWARDER_PROGRAM_ID,
+          miner: minerAddress,
+          pool: pool.address,
+          rewarder: pool.rewarder.address,
+          rewarderAuthority: pool.rewarder.authorityAddress,
+          mint: pool.rewarder.mintAddress,
+          authorityToken: authorityTokenAddress,
+          rewarderToken: rewarderRewardTokenAddress,
+          tokenProgram: TOKEN_PROGRAM_ID,
+        })
+        .remainingAccounts([
+          {
+            pubkey: this.walletAddress,
+            isSigner: false,
+            isWritable: true,
+          },
+          {
+            pubkey: getAssociatedTokenAddressSync(
+              pool.mintAddress,
+              minerAddress,
+              true,
+            ),
+            isSigner: false,
+            isWritable: true,
+          },
+          {
+            pubkey: pool.mintAddress,
+            isSigner: false,
+            isWritable: true,
+          },
+          {
+            pubkey: TOKEN_PROGRAM_ID,
+            isSigner: false,
+            isWritable: false,
+          },
+        ])
+        .instruction(),
+    );
+
     const { address: userGovTokenAddress, instruction: createUserGovAtaIX } =
       await this.getOrCreateAssociatedTokenAddressInstruction(
         locker.governo.govMintAddress,

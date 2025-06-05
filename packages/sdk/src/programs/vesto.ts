@@ -391,27 +391,146 @@ export class VestoContext<
           tokenProgram: TOKEN_PROGRAM_ID,
         })
         .instruction(),
-      await this.program.methods
-        .stakePosition()
-        .accountsStrict({
-          governo: pool.config.governo.address,
-          config: pool.config.address,
-          pool: pool.address,
-          position: address,
-          positionIouToken: positionIouTokenAddress,
-          miner: minerAddress,
-          minerIouToken: minerIouTokenAddress,
-          rewardPool: rewardPool.address,
-          rewarder: rewardPool.rewarder.address,
-          iouMint: pool.iouMintAddress,
-          tokenProgram: TOKEN_PROGRAM_ID,
-          rewarderProgram: REWARDER_PROGRAM_ID,
-        })
-        .instruction(),
     );
+
+    if (pool.config.vestingEndDate > new Date()) {
+      instructions.push(
+        await this.program.methods
+          .stakePosition()
+          .accountsStrict({
+            governo: pool.config.governo.address,
+            config: pool.config.address,
+            pool: pool.address,
+            position: address,
+            positionIouToken: positionIouTokenAddress,
+            miner: minerAddress,
+            minerIouToken: minerIouTokenAddress,
+            rewardPool: rewardPool.address,
+            rewarder: rewardPool.rewarder.address,
+            iouMint: pool.iouMintAddress,
+            tokenProgram: TOKEN_PROGRAM_ID,
+            rewarderProgram: REWARDER_PROGRAM_ID,
+          })
+          .instruction(),
+      );
+    } else if (position) {
+      const minerAddress = RewarderContext.getMinerAddress(
+        position.address,
+        rewardPool.address,
+      );
+
+      const {
+        address: userRewardTokenAddress,
+        instruction: createUserRewardAtaIX,
+      } = await this.getOrCreateAssociatedTokenAddressInstruction(
+        rewardPool.rewarder.mintAddress,
+        position.authorityAddress,
+      );
+      if (createUserRewardAtaIX) instructions.push(createUserRewardAtaIX);
+
+      const rewarderRewardTokenAddress =
+        rewardPool.rewarder.getAssociatedTokenAddress(
+          rewardPool.rewarder.mintAddress,
+        );
+
+      instructions.push(
+        await this.program.methods
+          .claimPosition()
+          .accountsStrict({
+            position: position.address,
+            miner: minerAddress,
+            rewardPool: rewardPool.address,
+            rewarder: rewardPool.rewarder.address,
+            rewarderAuthority: rewardPool.rewarder.authorityAddress,
+            rewarderToken: rewarderRewardTokenAddress,
+            userToken: userRewardTokenAddress,
+            mint: rewardPool.rewarder.mintAddress,
+            tokenProgram: TOKEN_PROGRAM_ID,
+            rewarderProgram: REWARDER_PROGRAM_ID,
+          })
+
+          .remainingAccounts([
+            {
+              pubkey: this.walletAddress,
+              isSigner: false,
+              isWritable: true,
+            },
+            {
+              pubkey: getAssociatedTokenAddressSync(
+                rewardPool.mintAddress,
+                minerAddress,
+                true,
+              ),
+              isSigner: false,
+              isWritable: true,
+            },
+            {
+              pubkey: rewardPool.mintAddress,
+              isSigner: false,
+              isWritable: true,
+            },
+            {
+              pubkey: TOKEN_PROGRAM_ID,
+              isSigner: false,
+              isWritable: false,
+            },
+          ])
+          .instruction(),
+      );
+    }
 
     return this.sendSmartTransaction(
       instructions,
+      [],
+      altAccounts,
+      priorityLevel,
+      maxPriorityMicroLamports,
+      simulate,
+    );
+  }
+
+  async unstake({
+    miner,
+    position,
+    altAccounts,
+    priorityLevel,
+    maxPriorityMicroLamports,
+    simulate,
+  }: TransactionArgs<{
+    miner: Miner;
+    position: VestingPosition;
+  }>): Promise<TransactionSignature> {
+    const positionIouTokenAddress = getAssociatedTokenAddressSync(
+      position.pool.iouMintAddress,
+      position.address,
+      true,
+    );
+    const minerIouTokenAddress = getAssociatedTokenAddressSync(
+      position.pool.iouMintAddress,
+      miner.address,
+      true,
+    );
+
+    return this.sendSmartTransaction(
+      [
+        await this.program.methods
+          .unstakePosition()
+          .accountsStrict({
+            governo: position.pool.config.governo.address,
+            config: position.pool.config.address,
+            pool: position.pool.address,
+            position: position.address,
+            positionIouToken: positionIouTokenAddress,
+            miner: miner.address,
+            minerIouToken: minerIouTokenAddress,
+            rewardPool: miner.pool.address,
+            rewarder: miner.pool.rewarder.address,
+            iouMint: position.pool.iouMintAddress,
+            tokenProgram: TOKEN_PROGRAM_ID,
+            rewarderProgram: REWARDER_PROGRAM_ID,
+          })
+          .instruction(),
+      ],
       [],
       altAccounts,
       priorityLevel,
