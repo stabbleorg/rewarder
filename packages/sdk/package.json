@@ -1,6 +1,6 @@
 {
   "name": "@stabbleorg/rewarder-sdk",
-  "version": "0.12.4",
+  "version": "0.12.5",
   "main": "src",
   "types": "src/index.d.ts",
   "license": "MIT",
@@ -10,10 +10,10 @@
     "@solana/spl-token": "^0.4.13",
     "@solana/web3.js": "^1.98.0",
     "@stabbleorg/anchor-contrib": "^2.5.1",
-    "bn.js": "^5.2.1",
+    "bn.js": "^5.2.2",
     "decimal.js": "^10.5.0"
   },
   "devDependencies": {
-    "@types/bn.js": "^5.1.6"
+    "@types/bn.js": "^5.2.0"
   }
 }
