@@ -2,7 +2,7 @@ use crate::{error::GovernoError, state::*};
 use anchor_common::validate::Validate;
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{
-    mint_to_checked, transfer_checked, Mint, MintToChecked, TokenAccount, TransferChecked,
+    mint_to_checked, transfer_checked, Mint, MintToChecked, TokenAccount, TokenInterface, TransferChecked,
 };
 use math::fixed_math::{FixedDiv, FixedMul, FixedPow};
 
@@ -121,8 +121,7 @@ pub struct CreateLocker<'info> {
     #[account(seeds = [Governo::AUTHORITY_PREFIX, &governo.key().to_bytes()], bump = governo.authority_bump)]
     pub governo_authority: UncheckedAccount<'info>,
 
-    /// CHECK: OK
-    pub token_program: UncheckedAccount<'info>,
+    pub token_program: Interface<'info, TokenInterface>,
 }
 
 impl<'info> Validate<'info> for CreateLocker<'info> {

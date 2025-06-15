@@ -36,6 +36,11 @@ pub mod governo {
         process_close_locker(ctx)
     }
 
+    #[access_control(ctx.accounts.validate())]
+    pub fn force_close_locker(ctx: Context<ForceCloseLocker>) -> Result<()> {
+        process_force_close_locker(ctx)
+    }
+
     pub fn stake_locker(ctx: Context<UpdateLocker>) -> Result<()> {
         process_stake_locker(ctx)
     }
@@ -46,5 +51,15 @@ pub mod governo {
 
     pub fn claim_locker<'a, 'b, 'c, 'info>(ctx: Context<'_, '_, '_, 'info, ClaimLocker<'info>>) -> Result<()> {
         process_claim_locker(ctx)
+    }
+
+    #[access_control(ctx.accounts.validate())]
+    pub fn deposit_voting_weight(ctx: Context<UpdateVotingWeight>) -> Result<()> {
+        process_deposit_voting_weight(ctx)
+    }
+
+    #[access_control(ctx.accounts.validate())]
+    pub fn withdraw_voting_weight(ctx: Context<UpdateVotingWeight>) -> Result<()> {
+        process_withdraw_voting_weight(ctx)
     }
 }

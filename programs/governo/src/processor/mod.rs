@@ -13,5 +13,11 @@ pub use locker_create::*;
 pub mod locker_close;
 pub use locker_close::*;
 
+pub mod locker_force_close;
+pub use locker_force_close::*;
+
 pub mod locker_update;
 pub use locker_update::*;
+
+pub mod locker_voting_weight;
+pub use locker_voting_weight::*;

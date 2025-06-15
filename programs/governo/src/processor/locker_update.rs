@@ -1,6 +1,6 @@
 use crate::{error::GovernoError, state::*};
 use anchor_lang::prelude::*;
-use anchor_spl::token_interface::TokenAccount;
+use anchor_spl::token_interface::{TokenAccount, TokenInterface};
 use rewarder::{
     cpi::{
         accounts::{ClaimMiner, UpdateMiner, WithMiner},
@@ -41,11 +41,18 @@ pub fn process_stake_locker(ctx: Context<UpdateLocker>) -> Result<()> {
 }
 
 pub fn process_unstake_locker(ctx: Context<UpdateLocker>) -> Result<()> {
-    require_gt!(
-        Clock::get()?.unix_timestamp,
-        ctx.accounts.locker.unlocks_at,
-        GovernoError::LockerActive
-    );
+    if ctx.remaining_accounts.len() > 0 {
+        let authority = &ctx.remaining_accounts[0];
+
+        assert!(authority.is_signer);
+        assert_eq!(authority.key(), ctx.accounts.locker.authority);
+    } else {
+        require_gt!(
+            Clock::get()?.unix_timestamp,
+            ctx.accounts.locker.unlocks_at,
+            GovernoError::LockerActive
+        );
+    }
 
     ctx.accounts.locker.authority_seeds(|signer_seed| {
         withdraw_miner(
@@ -132,8 +139,7 @@ pub struct UpdateLocker<'info> {
     #[account(mut)]
     pub miner_ve_token: UncheckedAccount<'info>,
 
-    /// CHECK: OK
-    pub token_program: UncheckedAccount<'info>,
+    pub token_program: Interface<'info, TokenInterface>,
 }
 
 #[derive(Accounts)]
@@ -176,6 +182,5 @@ pub struct ClaimLocker<'info> {
     #[account(mut)]
     pub rewarder_token: UncheckedAccount<'info>,
 
-    /// CHECK: OK
-    pub token_program: UncheckedAccount<'info>,
+    pub token_program: Interface<'info, TokenInterface>,
 }
