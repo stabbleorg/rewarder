@@ -91,6 +91,12 @@ export class Pool {
   }
 
   get dailyRewards(): number {
+    const currentTime = Math.trunc(new Date().getTime() / 1000);
+    const epochStartTime = this.rewarder.data.epochStartsAt.toNumber();
+    const epochEndTime = this.rewarder.data.epochEndsAt.toNumber();
+    if (epochStartTime > currentTime) return 0;
+    if (epochEndTime < currentTime) return 0;
+
     if (this.data.totalAmount.eq(new BN(0))) return 0;
     if (this.rewarder.data.totalWeights.eq(new BN(0))) return 0;
 
@@ -105,6 +111,12 @@ export class Pool {
   }
 
   get weeklyRewards(): number {
+    const currentTime = Math.trunc(new Date().getTime() / 1000);
+    const epochStartTime = this.rewarder.data.epochStartsAt.toNumber();
+    const epochEndTime = this.rewarder.data.epochEndsAt.toNumber();
+    if (epochStartTime > currentTime) return 0;
+    if (epochEndTime < currentTime) return 0;
+
     if (this.data.totalAmount.eq(new BN(0))) return 0;
     if (this.rewarder.data.totalWeights.eq(new BN(0))) return 0;
 
@@ -119,6 +131,12 @@ export class Pool {
   }
 
   get monthlyRewards(): number {
+    const currentTime = Math.trunc(new Date().getTime() / 1000);
+    const epochStartTime = this.rewarder.data.epochStartsAt.toNumber();
+    const epochEndTime = this.rewarder.data.epochEndsAt.toNumber();
+    if (epochStartTime > currentTime) return 0;
+    if (epochEndTime < currentTime) return 0;
+
     if (this.data.totalAmount.eq(new BN(0))) return 0;
     if (this.rewarder.data.totalWeights.eq(new BN(0))) return 0;
 

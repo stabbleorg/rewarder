@@ -561,6 +561,7 @@ export class RewarderContext<
     const instructions: TransactionInstruction[] = [];
 
     for (const miner of miners) {
+      if (miner.amount > 0 && miner.rewards === 0) continue;
       const claimInstructions = await this.createClaimInstructions(miner);
       instructions.push(...claimInstructions);
     }

@@ -48,7 +48,7 @@ export function fetchRewarder(program: Command) {
             "Miners",
           ],
           ...pools
-            .filter((pool) => pool.totalAmount > 0)
+            // .filter((pool) => pool.totalAmount > 0)
             .sort((a, b) => b.totalWeights - a.totalWeights)
             .map((pool) => {
               const asset = assets.find(

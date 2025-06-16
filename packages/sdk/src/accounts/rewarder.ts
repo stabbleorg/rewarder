@@ -83,6 +83,12 @@ export class Rewarder {
   }
 
   get dailyRewards(): number {
+    const currentTime = Math.trunc(new Date().getTime() / 1000);
+    const epochStartTime = this.data.epochStartsAt.toNumber();
+    const epochEndTime = this.data.epochEndsAt.toNumber();
+    if (epochStartTime > currentTime) return 0;
+    if (epochEndTime < currentTime) return 0;
+
     return SafeAmount.toUiAmount(
       this.data.totalRewards.mul(ONE_DAY_SECONDS).div(this.data.epochDuration),
       this.data.decimals,
@@ -90,6 +96,12 @@ export class Rewarder {
   }
 
   get weeklyRewards(): number {
+    const currentTime = Math.trunc(new Date().getTime() / 1000);
+    const epochStartTime = this.data.epochStartsAt.toNumber();
+    const epochEndTime = this.data.epochEndsAt.toNumber();
+    if (epochStartTime > currentTime) return 0;
+    if (epochEndTime < currentTime) return 0;
+
     return SafeAmount.toUiAmount(
       this.data.totalRewards.mul(ONE_WEEK_SECONDS).div(this.data.epochDuration),
       this.data.decimals,
@@ -97,6 +109,12 @@ export class Rewarder {
   }
 
   get monthlyRewards(): number {
+    const currentTime = Math.trunc(new Date().getTime() / 1000);
+    const epochStartTime = this.data.epochStartsAt.toNumber();
+    const epochEndTime = this.data.epochEndsAt.toNumber();
+    if (epochStartTime > currentTime) return 0;
+    if (epochEndTime < currentTime) return 0;
+
     return SafeAmount.toUiAmount(
       this.data.totalRewards
         .mul(ONE_MONTH_SECONDS)

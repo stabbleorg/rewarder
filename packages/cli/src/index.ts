@@ -15,7 +15,7 @@ import { setContext } from "./context";
 import { parseKeypair } from "./utils";
 
 program
-  .version("0.12.5")
+  .version("0.13.0")
   .option("-k, --keypair <path>", "wallet keypair", parseKeypair)
   .option("-u, --url <string>", "RPC monk or url", "devnet")
   .option("-a, --alt-keys <string...>", "Address Lookup Table keys")
