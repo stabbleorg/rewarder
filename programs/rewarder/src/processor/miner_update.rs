@@ -336,7 +336,7 @@ impl<'info> WithMiner<'info> {
 
     pub fn deposit(&mut self, amount: u64) -> Result<()> {
         require_gt!(amount, 0, RewarderError::DepositAmountZero);
-        require_gt!(self.pool.weight, 0, RewarderError::RewardPoolEmpty);
+        // require_gt!(self.pool.weight, 0, RewarderError::RewardPoolEmpty);
 
         self.refresh()?;
 
