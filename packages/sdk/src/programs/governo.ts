@@ -293,7 +293,7 @@ export class GovernoContext<
     keypair?: Keypair;
   }>): Promise<AddressWithTransactionSignature> {
     if (!governo.veMintAddress.equals(pool.mintAddress))
-      throw new Error("Invalid pool account");
+      throw new Error("Invalid rewards pool account");
 
     if (!governo.rewarderAddress.equals(pool.rewarder.address))
       throw new Error("Invalid rewarder account");
@@ -426,7 +426,7 @@ export class GovernoContext<
     locker: Locker;
   }>): Promise<TransactionSignature> {
     if (!locker.governo.veMintAddress.equals(pool.mintAddress))
-      throw new Error("Invalid pool account");
+      throw new Error("Invalid rewards pool account");
 
     const minerAddress = RewarderContext.getMinerAddress(
       locker.authorityAddress,
@@ -605,6 +605,169 @@ export class GovernoContext<
           mint: miner.pool.rewarder.mintAddress,
           authorityToken: authorityTokenAddress,
           rewarderToken: rewarderRewardTokenAddress,
+          tokenProgram: TOKEN_PROGRAM_ID,
+        })
+        .instruction(),
+    );
+
+    return this.sendSmartTransaction(
+      instructions,
+      [],
+      altAccounts,
+      priorityLevel,
+      maxPriorityMicroLamports,
+      simulate,
+    );
+  }
+
+  async depositVotingWeight({
+    pool,
+    locker,
+    altAccounts,
+    priorityLevel,
+    maxPriorityMicroLamports,
+    simulate,
+  }: TransactionArgs<{
+    pool: Pool;
+    locker: Locker;
+  }>): Promise<TransactionSignature> {
+    if (!locker.governo.veMintAddress.equals(pool.mintAddress))
+      throw new Error("Invalid rewards pool account");
+
+    const instructions: TransactionInstruction[] = [];
+
+    const minerAddress = RewarderContext.getMinerAddress(
+      locker.authorityAddress,
+      pool.address,
+    );
+
+    const lockerVeTokenAddress = locker.getAssociatedTokenAddress(
+      locker.governo.veMintAddress,
+    );
+
+    const minerVeTokenAddress = getAssociatedTokenAddressSync(
+      locker.governo.veMintAddress,
+      minerAddress,
+      true,
+    );
+
+    const userVeTokenAddress = this.getAssociatedTokenAddress(
+      locker.governo.veMintAddress,
+    );
+
+    instructions.push(
+      await this.program.methods
+        .depositVotingWeight()
+        .accountsStrict({
+          authority: this.walletAddress,
+          userVeToken: userVeTokenAddress,
+          lockerVeToken: lockerVeTokenAddress,
+          veMint: locker.governo.veMintAddress,
+          locker: locker.address,
+          lockerAuthority: locker.authorityAddress,
+          governo: locker.governo.address,
+          tokenProgram: TOKEN_PROGRAM_ID,
+        })
+        .instruction(),
+      await this.program.methods
+        .stakeLocker()
+        .accountsStrict({
+          locker: locker.address,
+          lockerAuthority: locker.authorityAddress,
+          governo: locker.governo.address,
+          rewarderProgram: REWARDER_PROGRAM_ID,
+          miner: minerAddress,
+          pool: pool.address,
+          rewarder: pool.rewarder.address,
+          veMint: pool.mintAddress,
+          lockerVeToken: lockerVeTokenAddress,
+          minerVeToken: minerVeTokenAddress,
+          tokenProgram: TOKEN_PROGRAM_ID,
+        })
+        .instruction(),
+    );
+
+    return this.sendSmartTransaction(
+      instructions,
+      [],
+      altAccounts,
+      priorityLevel,
+      maxPriorityMicroLamports,
+      simulate,
+    );
+  }
+
+  async withdrawVotingWeight({
+    pool,
+    locker,
+    altAccounts,
+    priorityLevel,
+    maxPriorityMicroLamports,
+    simulate,
+  }: TransactionArgs<{
+    pool: Pool;
+    locker: Locker;
+  }>): Promise<TransactionSignature> {
+    if (!locker.governo.veMintAddress.equals(pool.mintAddress))
+      throw new Error("Invalid rewards pool account");
+
+    const instructions: TransactionInstruction[] = [];
+
+    const minerAddress = RewarderContext.getMinerAddress(
+      locker.authorityAddress,
+      pool.address,
+    );
+
+    const lockerVeTokenAddress = locker.getAssociatedTokenAddress(
+      locker.governo.veMintAddress,
+    );
+
+    const minerVeTokenAddress = getAssociatedTokenAddressSync(
+      locker.governo.veMintAddress,
+      minerAddress,
+      true,
+    );
+
+    const { address: userVeTokenAddress, instruction: createUserVeAtaIX } =
+      await this.getOrCreateAssociatedTokenAddressInstruction(
+        locker.governo.veMintAddress,
+      );
+    if (createUserVeAtaIX) instructions.push(createUserVeAtaIX);
+
+    instructions.push(
+      await this.program.methods
+        .unstakeLocker()
+        .accountsStrict({
+          locker: locker.address,
+          lockerAuthority: locker.authorityAddress,
+          governo: locker.governo.address,
+          rewarderProgram: REWARDER_PROGRAM_ID,
+          miner: minerAddress,
+          pool: pool.address,
+          rewarder: pool.rewarder.address,
+          veMint: pool.mintAddress,
+          lockerVeToken: lockerVeTokenAddress,
+          minerVeToken: minerVeTokenAddress,
+          tokenProgram: TOKEN_PROGRAM_ID,
+        })
+        .remainingAccounts([
+          {
+            pubkey: locker.ownerAddress,
+            isSigner: true,
+            isWritable: false,
+          },
+        ])
+        .instruction(),
+      await this.program.methods
+        .withdrawVotingWeight()
+        .accountsStrict({
+          authority: this.walletAddress,
+          userVeToken: userVeTokenAddress,
+          lockerVeToken: lockerVeTokenAddress,
+          veMint: locker.governo.veMintAddress,
+          locker: locker.address,
+          lockerAuthority: locker.authorityAddress,
+          governo: locker.governo.address,
           tokenProgram: TOKEN_PROGRAM_ID,
         })
         .instruction(),
