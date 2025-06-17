@@ -753,13 +753,14 @@ dependencies = [
 
 [[package]]
 name = "governo"
-version = "0.10.0"
+version = "0.11.0"
 dependencies = [
  "anchor-common",
  "anchor-lang",
  "anchor-spl",
  "math",
  "rewarder",
+ "spl-governance",
 ]
 
 [[package]]
@@ -2376,6 +2377,14 @@ dependencies = [
  "solana-zk-sdk",
  "spl-pod",
  "spl-token-confidential-transfer-proof-extraction",
+]
+
+[[package]]
+name = "spl-governance"
+version = "3.1.1"
+source = "git+https://github.com/stabbleorg/spl-governance-cpi?rev=da8a54565ff43280ebe2ac7a4a3a6f5eb7ecc070#da8a54565ff43280ebe2ac7a4a3a6f5eb7ecc070"
+dependencies = [
+ "anchor-lang",
 ]
 
 [[package]]

@@ -36,10 +36,10 @@ pub mod governo {
         process_close_locker(ctx)
     }
 
-    #[access_control(ctx.accounts.validate())]
-    pub fn force_close_locker(ctx: Context<ForceCloseLocker>) -> Result<()> {
-        process_force_close_locker(ctx)
-    }
+    // #[access_control(ctx.accounts.validate())]
+    // pub fn force_close_locker(ctx: Context<ForceCloseLocker>) -> Result<()> {
+    //     process_force_close_locker(ctx)
+    // }
 
     pub fn stake_locker(ctx: Context<UpdateLocker>) -> Result<()> {
         process_stake_locker(ctx)

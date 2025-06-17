@@ -1,6 +1,6 @@
 [package]
 name = "governo"
-version = "0.10.0"
+version = "0.11.0"
 description = "Created with Anchor"
 edition = "2021"
 
@@ -23,3 +23,4 @@ anchor-common = { workspace = true }
 math = { workspace = true }
 
 rewarder = { path = "../rewarder", features = ["cpi"] }
+spl-governance = { git = "https://github.com/stabbleorg/spl-governance-cpi", rev = "da8a54565ff43280ebe2ac7a4a3a6f5eb7ecc070" }
