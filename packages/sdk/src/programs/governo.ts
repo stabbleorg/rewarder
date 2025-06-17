@@ -35,6 +35,10 @@ import IDL from "../generated/idl/governo.json";
 import REWARDER_PROGRAM_IDL from "../generated/idl/rewarder.json";
 import { REWARDER_PROGRAM_ID, RewarderContext } from "./rewarder";
 
+export const SPL_GOVERNANCE_PROGRAM_ID = new PublicKey(
+  "GovER5Lthms3bLBqWub97yVrMmEogzX7xNjdXpPPCVZw",
+);
+
 export const GOVERNO_PROGRAM_ID = new PublicKey(IDL.address);
 export const GOVERNO_ERRORS = new Map(
   IDL.errors.map((error) => [error.code, error.msg]),
@@ -56,6 +60,16 @@ export class GovernoContext<
     const data = await this.program.account.governo.fetch(governoAddress);
 
     return new Governo(governoAddress, data);
+  }
+
+  async loadLocker(lockerAddress: PublicKey, governo?: Governo) {
+    const data = await this.program.account.locker.fetch(lockerAddress);
+
+    if (!governo) {
+      governo = await this.loadGoverno(data.governo);
+    }
+
+    return new Locker(governo, lockerAddress, data);
   }
 
   async loadLockers(
@@ -234,6 +248,42 @@ export class GovernoContext<
           .remainingAccounts([
             {
               pubkey: rewarderAddress,
+              isSigner: false,
+              isWritable: false,
+            },
+          ])
+          .instruction(),
+      ],
+      [],
+      altAccounts,
+      priorityLevel,
+      maxPriorityMicroLamports,
+      simulate,
+    );
+  }
+
+  async updateRealm({
+    governo,
+    realmAddress,
+    altAccounts,
+    priorityLevel,
+    maxPriorityMicroLamports,
+    simulate,
+  }: TransactionArgs<{
+    governo: Governo;
+    realmAddress: PublicKey;
+  }>): Promise<TransactionSignature> {
+    return this.sendSmartTransaction(
+      [
+        await this.program.methods
+          .updateRealm()
+          .accountsStrict({
+            admin: governo.data.admin,
+            governo: governo.address,
+          })
+          .remainingAccounts([
+            {
+              pubkey: realmAddress,
               isSigner: false,
               isWritable: false,
             },
@@ -463,14 +513,13 @@ export class GovernoContext<
     ];
 
     const {
-      address: authorityTokenAddress,
-      instruction: createAuthorityRewardAtaIX,
+      address: userRewardTokenAddress,
+      instruction: createUserRewardAtaIX,
     } = await this.getOrCreateAssociatedTokenAddressInstruction(
       pool.rewarder.mintAddress,
       locker.ownerAddress,
     );
-    if (createAuthorityRewardAtaIX)
-      instructions.push(createAuthorityRewardAtaIX);
+    if (createUserRewardAtaIX) instructions.push(createUserRewardAtaIX);
 
     const rewarderRewardTokenAddress = pool.rewarder.getAssociatedTokenAddress(
       pool.rewarder.mintAddress,
@@ -488,13 +537,13 @@ export class GovernoContext<
           rewarder: pool.rewarder.address,
           rewarderAuthority: pool.rewarder.authorityAddress,
           mint: pool.rewarder.mintAddress,
-          authorityToken: authorityTokenAddress,
+          userToken: userRewardTokenAddress,
           rewarderToken: rewarderRewardTokenAddress,
           tokenProgram: TOKEN_PROGRAM_ID,
         })
         .remainingAccounts([
           {
-            pubkey: this.walletAddress,
+            pubkey: locker.ownerAddress,
             isSigner: false,
             isWritable: true,
           },
@@ -535,7 +584,7 @@ export class GovernoContext<
       await this.program.methods
         .closeLocker()
         .accountsStrict({
-          authority: this.walletAddress,
+          user: locker.ownerAddress,
           userGovToken: userGovTokenAddress,
           lockerGovToken: lockerGovTokenAddress,
           lockerVeToken: lockerVeTokenAddress,
@@ -578,13 +627,12 @@ export class GovernoContext<
     const instructions: TransactionInstruction[] = [];
 
     const {
-      address: authorityTokenAddress,
-      instruction: createAuthorityRewardAtaIX,
+      address: userRewardTokenAddress,
+      instruction: createUserRewardAtaIX,
     } = await this.getOrCreateAssociatedTokenAddressInstruction(
       miner.pool.rewarder.mintAddress,
     );
-    if (createAuthorityRewardAtaIX)
-      instructions.push(createAuthorityRewardAtaIX);
+    if (createUserRewardAtaIX) instructions.push(createUserRewardAtaIX);
 
     const rewarderRewardTokenAddress =
       miner.pool.rewarder.getAssociatedTokenAddress(
@@ -603,7 +651,7 @@ export class GovernoContext<
           rewarder: miner.pool.rewarder.address,
           rewarderAuthority: miner.pool.rewarder.authorityAddress,
           mint: miner.pool.rewarder.mintAddress,
-          authorityToken: authorityTokenAddress,
+          userToken: userRewardTokenAddress,
           rewarderToken: rewarderRewardTokenAddress,
           tokenProgram: TOKEN_PROGRAM_ID,
         })
@@ -628,61 +676,80 @@ export class GovernoContext<
     maxPriorityMicroLamports,
     simulate,
   }: TransactionArgs<{
-    pool: Pool;
+    pool?: Pool;
     locker: Locker;
   }>): Promise<TransactionSignature> {
-    if (!locker.governo.veMintAddress.equals(pool.mintAddress))
-      throw new Error("Invalid rewards pool account");
-
     const instructions: TransactionInstruction[] = [];
-
-    const minerAddress = RewarderContext.getMinerAddress(
-      locker.authorityAddress,
-      pool.address,
-    );
 
     const lockerVeTokenAddress = locker.getAssociatedTokenAddress(
       locker.governo.veMintAddress,
     );
 
-    const minerVeTokenAddress = getAssociatedTokenAddressSync(
-      locker.governo.veMintAddress,
-      minerAddress,
-      true,
-    );
+    if (pool) {
+      const minerAddress = RewarderContext.getMinerAddress(
+        locker.authorityAddress,
+        pool.address,
+      );
 
-    const userVeTokenAddress = this.getAssociatedTokenAddress(
-      locker.governo.veMintAddress,
-    );
+      const minerVeTokenAddress = getAssociatedTokenAddressSync(
+        locker.governo.veMintAddress,
+        minerAddress,
+        true,
+      );
+
+      instructions.push(
+        await this.program.methods
+          .unstakeLocker()
+          .accountsStrict({
+            locker: locker.address,
+            lockerAuthority: locker.authorityAddress,
+            governo: locker.governo.address,
+            rewarderProgram: REWARDER_PROGRAM_ID,
+            miner: minerAddress,
+            pool: pool.address,
+            rewarder: pool.rewarder.address,
+            veMint: pool.mintAddress,
+            lockerVeToken: lockerVeTokenAddress,
+            minerVeToken: minerVeTokenAddress,
+            tokenProgram: TOKEN_PROGRAM_ID,
+          })
+          .remainingAccounts([
+            {
+              pubkey: locker.ownerAddress,
+              isSigner: true,
+              isWritable: false,
+            },
+          ])
+          .instruction(),
+      );
+    }
 
     instructions.push(
       await this.program.methods
         .depositVotingWeight()
         .accountsStrict({
-          authority: this.walletAddress,
-          userVeToken: userVeTokenAddress,
+          user: locker.ownerAddress,
           lockerVeToken: lockerVeTokenAddress,
           veMint: locker.governo.veMintAddress,
           locker: locker.address,
           lockerAuthority: locker.authorityAddress,
           governo: locker.governo.address,
           tokenProgram: TOKEN_PROGRAM_ID,
-        })
-        .instruction(),
-      await this.program.methods
-        .stakeLocker()
-        .accountsStrict({
-          locker: locker.address,
-          lockerAuthority: locker.authorityAddress,
-          governo: locker.governo.address,
-          rewarderProgram: REWARDER_PROGRAM_ID,
-          miner: minerAddress,
-          pool: pool.address,
-          rewarder: pool.rewarder.address,
-          veMint: pool.mintAddress,
-          lockerVeToken: lockerVeTokenAddress,
-          minerVeToken: minerVeTokenAddress,
-          tokenProgram: TOKEN_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
+          governanceProgram: SPL_GOVERNANCE_PROGRAM_ID,
+          realm: locker.governo.realmAddress,
+          realmConfig: GovernoContext.getRealmConfigAddress(
+            locker.governo.realmAddress,
+          ),
+          realmVeToken: GovernoContext.getGoverningTokenHoldingAddress(
+            locker.governo.realmAddress,
+            locker.governo.veMintAddress,
+          ),
+          tokenOwnerRecord: GovernoContext.getTokenOwnerRecordAddress(
+            locker.governo.realmAddress,
+            locker.governo.veMintAddress,
+            locker.authorityAddress,
+          ),
         })
         .instruction(),
     );
@@ -705,73 +772,76 @@ export class GovernoContext<
     maxPriorityMicroLamports,
     simulate,
   }: TransactionArgs<{
-    pool: Pool;
+    pool?: Pool;
     locker: Locker;
   }>): Promise<TransactionSignature> {
-    if (!locker.governo.veMintAddress.equals(pool.mintAddress))
-      throw new Error("Invalid rewards pool account");
-
     const instructions: TransactionInstruction[] = [];
-
-    const minerAddress = RewarderContext.getMinerAddress(
-      locker.authorityAddress,
-      pool.address,
-    );
 
     const lockerVeTokenAddress = locker.getAssociatedTokenAddress(
       locker.governo.veMintAddress,
     );
 
-    const minerVeTokenAddress = getAssociatedTokenAddressSync(
-      locker.governo.veMintAddress,
-      minerAddress,
-      true,
-    );
-
-    const { address: userVeTokenAddress, instruction: createUserVeAtaIX } =
-      await this.getOrCreateAssociatedTokenAddressInstruction(
-        locker.governo.veMintAddress,
-      );
-    if (createUserVeAtaIX) instructions.push(createUserVeAtaIX);
-
     instructions.push(
-      await this.program.methods
-        .unstakeLocker()
-        .accountsStrict({
-          locker: locker.address,
-          lockerAuthority: locker.authorityAddress,
-          governo: locker.governo.address,
-          rewarderProgram: REWARDER_PROGRAM_ID,
-          miner: minerAddress,
-          pool: pool.address,
-          rewarder: pool.rewarder.address,
-          veMint: pool.mintAddress,
-          lockerVeToken: lockerVeTokenAddress,
-          minerVeToken: minerVeTokenAddress,
-          tokenProgram: TOKEN_PROGRAM_ID,
-        })
-        .remainingAccounts([
-          {
-            pubkey: locker.ownerAddress,
-            isSigner: true,
-            isWritable: false,
-          },
-        ])
-        .instruction(),
       await this.program.methods
         .withdrawVotingWeight()
         .accountsStrict({
-          authority: this.walletAddress,
-          userVeToken: userVeTokenAddress,
+          user: locker.ownerAddress,
           lockerVeToken: lockerVeTokenAddress,
           veMint: locker.governo.veMintAddress,
           locker: locker.address,
           lockerAuthority: locker.authorityAddress,
           governo: locker.governo.address,
           tokenProgram: TOKEN_PROGRAM_ID,
+          systemProgram: SystemProgram.programId,
+          governanceProgram: SPL_GOVERNANCE_PROGRAM_ID,
+          realm: locker.governo.realmAddress,
+          realmConfig: GovernoContext.getRealmConfigAddress(
+            locker.governo.realmAddress,
+          ),
+          realmVeToken: GovernoContext.getGoverningTokenHoldingAddress(
+            locker.governo.realmAddress,
+            locker.governo.veMintAddress,
+          ),
+          tokenOwnerRecord: GovernoContext.getTokenOwnerRecordAddress(
+            locker.governo.realmAddress,
+            locker.governo.veMintAddress,
+            locker.authorityAddress,
+          ),
         })
         .instruction(),
     );
+
+    if (pool && locker.unlocksAt > new Date()) {
+      const minerAddress = RewarderContext.getMinerAddress(
+        locker.authorityAddress,
+        pool.address,
+      );
+
+      const minerVeTokenAddress = getAssociatedTokenAddressSync(
+        locker.governo.veMintAddress,
+        minerAddress,
+        true,
+      );
+
+      instructions.push(
+        await this.program.methods
+          .stakeLocker()
+          .accountsStrict({
+            locker: locker.address,
+            lockerAuthority: locker.authorityAddress,
+            governo: locker.governo.address,
+            rewarderProgram: REWARDER_PROGRAM_ID,
+            miner: minerAddress,
+            pool: pool.address,
+            rewarder: pool.rewarder.address,
+            veMint: pool.mintAddress,
+            lockerVeToken: lockerVeTokenAddress,
+            minerVeToken: minerVeTokenAddress,
+            tokenProgram: TOKEN_PROGRAM_ID,
+          })
+          .instruction(),
+      );
+    }
 
     return this.sendSmartTransaction(
       instructions,
@@ -794,6 +864,43 @@ export class GovernoContext<
     return PublicKey.findProgramAddressSync(
       [Buffer.from("locker_authority"), lockerAddress.toBuffer()],
       GOVERNO_PROGRAM_ID,
+    )[0];
+  }
+
+  static getGoverningTokenHoldingAddress(
+    realmAddress: PublicKey,
+    mintAddress: PublicKey,
+  ): PublicKey {
+    return PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("governance"),
+        realmAddress.toBuffer(),
+        mintAddress.toBuffer(),
+      ],
+      SPL_GOVERNANCE_PROGRAM_ID,
+    )[0];
+  }
+
+  static getTokenOwnerRecordAddress(
+    realmAddress: PublicKey,
+    mintAddress: PublicKey,
+    governingTokenOwner: PublicKey,
+  ): PublicKey {
+    return PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("governance"),
+        realmAddress.toBuffer(),
+        mintAddress.toBuffer(),
+        governingTokenOwner.toBuffer(),
+      ],
+      SPL_GOVERNANCE_PROGRAM_ID,
+    )[0];
+  }
+
+  static getRealmConfigAddress(realmAddress: PublicKey): PublicKey {
+    return PublicKey.findProgramAddressSync(
+      [Buffer.from("realm-config"), realmAddress.toBuffer()],
+      SPL_GOVERNANCE_PROGRAM_ID,
     )[0];
   }
 }

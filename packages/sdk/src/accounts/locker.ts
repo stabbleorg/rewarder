@@ -7,7 +7,7 @@ import { GovernoContext } from "../programs";
 
 export type LockerData = {
   governo: PublicKey;
-  authority: PublicKey;
+  user: PublicKey;
   // authorityBump: number;
   lockedAmount: BN;
   votingWeight: BN;
@@ -36,7 +36,7 @@ export class Locker {
   }
 
   get ownerAddress(): PublicKey {
-    return this.data.authority;
+    return this.data.user;
   }
 
   get lockedAmount(): number {
