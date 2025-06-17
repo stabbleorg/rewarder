@@ -50,7 +50,7 @@ pub fn process_close_locker(ctx: Context<CloseLocker>) -> Result<()> {
                 CloseAccount {
                     account: ctx.accounts.locker_gov_token.to_account_info(),
                     authority: ctx.accounts.locker_authority.to_account_info(),
-                    destination: ctx.accounts.authority.to_account_info(),
+                    destination: ctx.accounts.user.to_account_info(),
                 },
             )
             .with_signer(&[signer_seed]),
@@ -76,7 +76,7 @@ pub fn process_close_locker(ctx: Context<CloseLocker>) -> Result<()> {
                 CloseAccount {
                     account: ctx.accounts.locker_ve_token.to_account_info(),
                     authority: ctx.accounts.locker_authority.to_account_info(),
-                    destination: ctx.accounts.authority.to_account_info(),
+                    destination: ctx.accounts.user.to_account_info(),
                 },
             )
             .with_signer(&[signer_seed]),
@@ -87,11 +87,11 @@ pub fn process_close_locker(ctx: Context<CloseLocker>) -> Result<()> {
 #[derive(Accounts)]
 pub struct CloseLocker<'info> {
     #[account(mut)]
-    pub authority: Signer<'info>,
+    pub user: Signer<'info>,
 
     #[account(mut,
         associated_token::mint = gov_mint,
-        associated_token::authority = authority,
+        associated_token::authority = user,
     )]
     pub user_gov_token: InterfaceAccount<'info, TokenAccount>,
 
@@ -113,7 +113,7 @@ pub struct CloseLocker<'info> {
     #[account(mut)]
     pub ve_mint: InterfaceAccount<'info, Mint>,
 
-    #[account(mut, close = authority, has_one = authority, has_one = governo)]
+    #[account(mut, close = user, has_one = user, has_one = governo)]
     pub locker: Account<'info, Locker>,
 
     /// CHECK: OK

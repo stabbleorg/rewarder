@@ -22,4 +22,7 @@ pub enum GovernoError {
 
     #[msg("Your voting weight has already been used")]
     VotingWeightAlreadyUsed,
+
+    #[msg("Realm is not valid")]
+    InvalidRealm,
 }

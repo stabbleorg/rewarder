@@ -41,7 +41,7 @@ pub fn process_create_locker(ctx: Context<CreateLocker>, amount: u64, duration: 
 
     ctx.accounts.locker.set_inner(Locker {
         governo: ctx.accounts.governo.key(),
-        authority: ctx.accounts.user.key(),
+        user: ctx.accounts.user.key(),
         authority_bump: ctx.bumps.locker_authority,
         locked_amount: amount,
         voting_weight: ve_amount,

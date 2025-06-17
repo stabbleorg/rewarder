@@ -237,7 +237,7 @@ dependencies = [
  "anchor-lang",
  "spl-associated-token-account",
  "spl-pod",
- "spl-token",
+ "spl-token 7.0.0",
  "spl-token-2022",
  "spl-token-group-interface",
  "spl-token-metadata-interface",
@@ -753,14 +753,14 @@ dependencies = [
 
 [[package]]
 name = "governo"
-version = "0.11.0"
+version = "0.12.0"
 dependencies = [
  "anchor-common",
  "anchor-lang",
  "anchor-spl",
  "math",
  "rewarder",
- "spl-governance",
+ "spl-governance-anchor",
 ]
 
 [[package]]
@@ -2315,7 +2315,7 @@ dependencies = [
  "num-traits",
  "solana-program",
  "spl-associated-token-account-client",
- "spl-token",
+ "spl-token 7.0.0",
  "spl-token-2022",
  "thiserror 1.0.69",
 ]
@@ -2381,10 +2381,57 @@ dependencies = [
 
 [[package]]
 name = "spl-governance"
+version = "4.0.0"
+source = "git+https://github.com/Mythic-Project/solana-program-library.git?branch=token-2022-v3.0#187d688911bd4301f106a9ffe742892384a2d63f"
+dependencies = [
+ "arrayref",
+ "bincode",
+ "borsh 1.5.7",
+ "num-derive",
+ "num-traits",
+ "serde",
+ "serde_derive",
+ "solana-program",
+ "spl-governance-addin-api",
+ "spl-governance-tools",
+ "spl-token 4.0.1",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "spl-governance-addin-api"
+version = "0.1.4"
+source = "git+https://github.com/Mythic-Project/solana-program-library.git?branch=token-2022-v3.0#187d688911bd4301f106a9ffe742892384a2d63f"
+dependencies = [
+ "borsh 1.5.7",
+ "solana-program",
+ "spl-governance-tools",
+]
+
+[[package]]
+name = "spl-governance-anchor"
 version = "3.1.1"
-source = "git+https://github.com/stabbleorg/spl-governance-cpi?rev=da8a54565ff43280ebe2ac7a4a3a6f5eb7ecc070#da8a54565ff43280ebe2ac7a4a3a6f5eb7ecc070"
+source = "git+https://github.com/stabbleorg/spl-governance-anchor?rev=9a62593dc9aa71cea9aab2f85596a267072726b0#9a62593dc9aa71cea9aab2f85596a267072726b0"
 dependencies = [
  "anchor-lang",
+ "spl-governance",
+]
+
+[[package]]
+name = "spl-governance-tools"
+version = "0.1.4"
+source = "git+https://github.com/Mythic-Project/solana-program-library.git?branch=token-2022-v3.0#187d688911bd4301f106a9ffe742892384a2d63f"
+dependencies = [
+ "arrayref",
+ "bincode",
+ "borsh 1.5.7",
+ "num-derive",
+ "num-traits",
+ "serde",
+ "serde_derive",
+ "solana-program",
+ "spl-token 4.0.1",
+ "thiserror 1.0.69",
 ]
 
 [[package]]
@@ -2470,6 +2517,20 @@ dependencies = [
 
 [[package]]
 name = "spl-token"
+version = "4.0.1"
+source = "git+https://github.com/Mythic-Project/solana-program-library.git?branch=token-2022-v3.0#187d688911bd4301f106a9ffe742892384a2d63f"
+dependencies = [
+ "arrayref",
+ "bytemuck",
+ "num-derive",
+ "num-traits",
+ "num_enum",
+ "solana-program",
+ "thiserror 1.0.69",
+]
+
+[[package]]
+name = "spl-token"
 version = "7.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ed320a6c934128d4f7e54fe00e16b8aeaecf215799d060ae14f93378da6dc834"
@@ -2500,7 +2561,7 @@ dependencies = [
  "spl-elgamal-registry",
  "spl-memo",
  "spl-pod",
- "spl-token",
+ "spl-token 7.0.0",
  "spl-token-confidential-transfer-ciphertext-arithmetic",
  "spl-token-confidential-transfer-proof-extraction",
  "spl-token-confidential-transfer-proof-generation",

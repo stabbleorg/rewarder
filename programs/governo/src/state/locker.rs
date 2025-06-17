@@ -7,7 +7,7 @@ pub struct Locker {
     pub governo: Pubkey,
 
     /// The voter's authority (wallet that locked tokens).
-    pub authority: Pubkey,
+    pub user: Pubkey,
 
     /// Bump seed for the PDA that holds the voter's locked tokens.
     pub authority_bump: u8,
@@ -52,7 +52,7 @@ where
 #[derive(AnchorSerialize, AnchorDeserialize)]
 pub struct LockerCreatedData {
     pub governo: Pubkey,
-    pub authority: Pubkey,
+    pub user: Pubkey,
     pub locked_amount: u64,
     pub voting_weight: u64,
     pub voting_weight_used: u64,
@@ -79,7 +79,7 @@ where
             pubkey: self.key(),
             data: LockerCreatedData {
                 governo: self.as_ref().governo,
-                authority: self.as_ref().authority,
+                user: self.as_ref().user,
                 locked_amount: self.as_ref().locked_amount,
                 voting_weight: self.as_ref().voting_weight,
                 voting_weight_used: self.as_ref().voting_weight_used,

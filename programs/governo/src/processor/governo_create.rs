@@ -22,7 +22,8 @@ pub fn process_create_governo(
         total_locked_amount: 0,
         total_voting_weight: 0,
         rewarder: None,
-        padding: [0; 87],
+        realm: None,
+        padding: [0; 54],
     });
 
     Ok(())

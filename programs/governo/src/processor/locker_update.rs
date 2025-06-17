@@ -42,10 +42,10 @@ pub fn process_stake_locker(ctx: Context<UpdateLocker>) -> Result<()> {
 
 pub fn process_unstake_locker(ctx: Context<UpdateLocker>) -> Result<()> {
     if ctx.remaining_accounts.len() > 0 {
-        let authority = &ctx.remaining_accounts[0];
+        let user = &ctx.remaining_accounts[0];
 
-        assert!(authority.is_signer);
-        assert_eq!(authority.key(), ctx.accounts.locker.authority);
+        assert!(user.is_signer);
+        assert_eq!(user.key(), ctx.accounts.locker.user);
     } else {
         require_gt!(
             Clock::get()?.unix_timestamp,
@@ -91,7 +91,7 @@ pub fn process_claim_locker<'a, 'b, 'c, 'info>(ctx: Context<'_, '_, '_, 'info, C
                     beneficiary: ctx.accounts.locker_authority.to_account_info(),
                     rewarder_authority: ctx.accounts.rewarder_authority.to_account_info(),
                     mint: ctx.accounts.mint.to_account_info(),
-                    user_token: ctx.accounts.authority_token.to_account_info(),
+                    user_token: ctx.accounts.user_token.to_account_info(),
                     rewarder_token: ctx.accounts.rewarder_token.to_account_info(),
                     token_program: ctx.accounts.token_program.to_account_info(),
                 },
@@ -174,9 +174,9 @@ pub struct ClaimLocker<'info> {
 
     #[account(mut,
         associated_token::mint = mint,
-        associated_token::authority = locker.authority,
+        associated_token::authority = locker.user,
     )]
-    pub authority_token: InterfaceAccount<'info, TokenAccount>,
+    pub user_token: InterfaceAccount<'info, TokenAccount>,
 
     /// CHECK: OK
     #[account(mut)]

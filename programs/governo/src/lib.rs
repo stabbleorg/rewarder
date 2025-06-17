@@ -21,6 +21,10 @@ pub mod governo {
         process_update_rewarder(ctx)
     }
 
+    pub fn update_realm<'a, 'b, 'c, 'info>(ctx: Context<'_, '_, 'info, 'info, UpdateGoverno<'info>>) -> Result<()> {
+        process_update_realm(ctx)
+    }
+
     #[access_control(ctx.accounts.validate())]
     pub fn close_governo(ctx: Context<CloseGoverno>) -> Result<()> {
         Ok(())

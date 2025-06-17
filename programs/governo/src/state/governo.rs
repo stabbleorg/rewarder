@@ -29,7 +29,9 @@ pub struct Governo {
 
     pub rewarder: Option<Pubkey>,
 
-    pub padding: [u8; 87],
+    pub realm: Option<Pubkey>,
+
+    pub padding: [u8; 54],
 }
 
 impl Governo {
