@@ -18,6 +18,7 @@ export type GovernoData = {
   totalLockedAmount: BN;
   totalVotingWeight: BN;
   rewarder: PublicKey | null;
+  realm: PublicKey | null;
   // padding: number[];
 };
 
@@ -51,6 +52,12 @@ export class Governo {
     if (!this.data.rewarder) throw new Error("Rewarder was not set yet");
 
     return this.data.rewarder;
+  }
+
+  get realmAddress(): PublicKey {
+    if (!this.data.realm) throw new Error("Realm was not set yet");
+
+    return this.data.realm;
   }
 
   get totalLockedAmount(): number {

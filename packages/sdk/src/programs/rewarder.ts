@@ -652,7 +652,7 @@ export class RewarderContext<
         .instruction(),
     );
 
-    if (derivedPool) {
+    if (derivedPool && derivedPool.weight > 0) {
       const depositDerivedInstructions =
         await this.createDepositDerivedInstructions({
           derivedPool,
