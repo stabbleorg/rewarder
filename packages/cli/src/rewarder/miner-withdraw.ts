@@ -37,7 +37,7 @@ export function withdrawMiner(program: Command) {
       const derivedMiner = miners.find(
         (miner) =>
           miner.pool.rewarder.parentRewarder?.address.equals(
-            primaryMiner.address,
+            primaryMiner.pool.rewarder.address,
           ) && miner.pool.mintAddress.equals(mintK),
       );
 

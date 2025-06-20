@@ -783,10 +783,8 @@ export class RewarderContext<
     );
     const tokenProgramAddress = data!.owner;
 
-    const minerAddress = RewarderContext.getMinerAddress(
-      authorityAddress,
-      pool.address,
-    );
+    const miner = await this.loadMiner(pool);
+    if (!miner) throw new Error("Miner not found");
 
     const { address: userTokenAddress, instruction: createUserAtaIX } =
       await this.getOrCreateAssociatedTokenAddressInstruction(
@@ -796,19 +794,19 @@ export class RewarderContext<
       );
     if (createUserAtaIX) instructions.push(createUserAtaIX);
 
-    const minerTokenAddress = getAssociatedTokenAddressSync(
+    const minerTokenAddress = miner.getAssociatedTokenAddress(
       pool.mintAddress,
-      minerAddress,
-      true,
       tokenProgramAddress,
     );
 
+    const rawAmount = SafeAmount.toU64Amount(amount, pool.data.decimals);
+
     instructions.push(
       await this.program.methods
-        .withdrawMiner(SafeAmount.toU64Amount(amount, pool.data.decimals))
+        .withdrawMiner(rawAmount)
         .accountsStrict({
           with: {
-            miner: minerAddress,
+            miner: miner.address,
             pool: pool.address,
             rewarder: pool.rewarder.address,
           },
@@ -822,42 +820,69 @@ export class RewarderContext<
     );
 
     if (derivedPool) {
-      const derivedMinerAddress = RewarderContext.getMinerAddress(
-        minerAddress,
-        derivedPool.address,
-      );
+      const derivedMiner = await this.loadMiner(derivedPool, miner.address);
 
-      const derivedMinerTokenAddress = getAssociatedTokenAddressSync(
-        pool.mintAddress, // = derivedPool.mintAddress
-        derivedMinerAddress,
-        true,
-        tokenProgramAddress,
-      );
+      if (derivedMiner) {
+        const derivedMinerTokenAddress = derivedMiner.getAssociatedTokenAddress(
+          derivedMiner.pool.mintAddress,
+          tokenProgramAddress,
+        );
 
-      instructions.unshift(
-        await this.program.methods
-          .withdrawDerivedMiner(
-            SafeAmount.toU64Amount(amount, pool.data.decimals),
-          )
-          .accountsStrict({
-            with: {
-              miner: minerAddress,
-              pool: pool.address,
-              rewarder: pool.rewarder.address,
-            },
-            withDerived: {
-              miner: derivedMinerAddress,
-              pool: derivedPool.address,
-              rewarder: derivedPool.rewarder.address,
-            },
-            beneficiary: this.walletAddress,
-            mint: derivedPool.mintAddress,
-            authorityToken: minerTokenAddress,
-            minerToken: derivedMinerTokenAddress,
-            tokenProgram: tokenProgramAddress,
-          })
-          .instruction(),
-      );
+        const remainingAmount = miner.data.amount.sub(rawAmount);
+
+        if (derivedMiner.data.amount.gt(remainingAmount)) {
+          const rawAmount2 = derivedMiner.data.amount.sub(remainingAmount);
+
+          instructions.unshift(
+            await this.program.methods
+              .withdrawDerivedMiner(rawAmount2)
+              .accountsStrict({
+                with: {
+                  miner: miner.address,
+                  pool: pool.address,
+                  rewarder: pool.rewarder.address,
+                },
+                withDerived: {
+                  miner: derivedMiner.address,
+                  pool: derivedPool.address,
+                  rewarder: derivedPool.rewarder.address,
+                },
+                beneficiary: derivedMiner.beneficiaryAddress,
+                mint: derivedPool.mintAddress,
+                authorityToken: minerTokenAddress,
+                minerToken: derivedMinerTokenAddress,
+                tokenProgram: tokenProgramAddress,
+              })
+              .instruction(),
+          );
+        } else if (
+          remainingAmount.gt(derivedMiner.data.amount) &&
+          derivedPool.weight > 0
+        ) {
+          instructions.push(
+            await this.program.methods
+              .depositDerivedMiner()
+              .accountsStrict({
+                with: {
+                  miner: miner.address,
+                  pool: pool.address,
+                  rewarder: pool.rewarder.address,
+                },
+                withDerived: {
+                  miner: derivedMiner.address,
+                  pool: derivedPool.address,
+                  rewarder: derivedPool.rewarder.address,
+                },
+                beneficiary: derivedMiner.beneficiaryAddress,
+                mint: derivedPool.mintAddress,
+                authorityToken: minerTokenAddress,
+                minerToken: derivedMinerTokenAddress,
+                tokenProgram: tokenProgramAddress,
+              })
+              .instruction(),
+          );
+        }
+      }
     }
 
     return instructions;
