@@ -18,6 +18,7 @@ export function unstake(program: Command) {
         const pool = await vestoContext.loadPool(poolK);
         const position = await vestoContext.loadPosition(pool, userK);
         if (!position) throw new Error("Vesting position does not exist");
+        console.log("Position:", position.address.toBase58());
 
         const rewarderContext = new RewarderContext(provider);
         const rewarder = await rewarderContext.loadRewarder(

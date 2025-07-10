@@ -23,8 +23,9 @@ export function fetchRewarder(program: Command) {
       );
 
       console.log("Faucet:", rewarder.authorityAddress.toBase58());
-      console.log("Total rewards:", rewarder.totalRewards);
       console.log("Total weights:", rewarder.totalWeights);
+      console.log("Total rewards:", rewarder.totalRewards);
+      console.log("Monthly rewards:", rewarder.monthlyRewards);
       console.log("Starts:", rewarder.startsAt);
       console.log("Ends:", rewarder.endsAt);
 
