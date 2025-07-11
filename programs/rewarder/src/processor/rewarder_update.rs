@@ -3,7 +3,7 @@ use anchor_lang::prelude::*;
 
 pub fn process_update_rewarder(
     ctx: Context<UpdateRewarder>,
-    total_rewards: u64,
+    total_rewards: u64, // additional rewards
     epoch_starts_at: i64,
     epoch_ends_at: i64,
 ) -> Result<()> {
@@ -23,6 +23,7 @@ pub fn process_update_rewarder(
 
         if last_updated_time >= ctx.accounts.rewarder.epoch_ends_at {
             ctx.accounts.rewarder.cumulative_rewards += ctx.accounts.rewarder.total_rewards;
+            ctx.accounts.rewarder.total_rewards = 0;
         } else {
             let rewards_distributed = u64::try_from(
                 ctx.accounts.rewarder.total_rewards as u128
@@ -31,18 +32,27 @@ pub fn process_update_rewarder(
             )
             .unwrap();
             ctx.accounts.rewarder.cumulative_rewards += rewards_distributed;
+            ctx.accounts.rewarder.total_rewards -= rewards_distributed;
         }
 
         ctx.accounts.rewarder.epoch_index += 1;
     }
 
-    ctx.accounts.rewarder.total_rewards = total_rewards;
+    ctx.accounts.rewarder.total_rewards += total_rewards;
     ctx.accounts.rewarder.epoch_starts_at = epoch_starts_at;
     ctx.accounts.rewarder.epoch_ends_at = epoch_ends_at;
     ctx.accounts.rewarder.epoch_duration = epoch_ends_at - epoch_starts_at;
     ctx.accounts.rewarder.last_updated_at = epoch_starts_at;
 
     ctx.accounts.rewarder.emit_rewarder_updated();
+
+    Ok(())
+}
+
+pub fn process_update_admin(ctx: Context<UpdateRewarder>, new_admin: Pubkey) -> Result<()> {
+    require_keys_neq!(ctx.accounts.rewarder.admin, new_admin);
+
+    ctx.accounts.rewarder.admin = new_admin;
 
     Ok(())
 }

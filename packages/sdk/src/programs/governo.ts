@@ -226,6 +226,35 @@ export class GovernoContext<
     return { address, signature };
   }
 
+  async updateAdmin({
+    governo,
+    adminAddress,
+    altAccounts,
+    priorityLevel,
+    maxPriorityMicroLamports,
+    simulate,
+  }: TransactionArgs<{
+    governo: Governo;
+    adminAddress: PublicKey;
+  }>): Promise<TransactionSignature> {
+    return this.sendSmartTransaction(
+      [
+        await this.program.methods
+          .updateAdmin(adminAddress)
+          .accountsStrict({
+            admin: governo.adminAddress,
+            governo: governo.address,
+          })
+          .instruction(),
+      ],
+      [],
+      altAccounts,
+      priorityLevel,
+      maxPriorityMicroLamports,
+      simulate,
+    );
+  }
+
   async updateRewarder({
     governo,
     rewarderAddress,
@@ -242,7 +271,7 @@ export class GovernoContext<
         await this.program.methods
           .updateRewarder()
           .accountsStrict({
-            admin: governo.data.admin,
+            admin: governo.adminAddress,
             governo: governo.address,
           })
           .remainingAccounts([
@@ -278,7 +307,7 @@ export class GovernoContext<
         await this.program.methods
           .updateRealm()
           .accountsStrict({
-            admin: governo.data.admin,
+            admin: governo.adminAddress,
             governo: governo.address,
           })
           .remainingAccounts([
@@ -312,7 +341,7 @@ export class GovernoContext<
         await this.program.methods
           .closeGoverno()
           .accountsStrict({
-            admin: governo.data.admin,
+            admin: governo.adminAddress,
             governo: governo.address,
           })
           .instruction(),

@@ -40,6 +40,10 @@ export class Governo {
     return GovernoContext.getGovernoAuthorityAddress(this.address);
   }
 
+  get adminAddress(): PublicKey {
+    return this.data.admin;
+  }
+
   get govMintAddress(): PublicKey {
     return this.data.govMint;
   }

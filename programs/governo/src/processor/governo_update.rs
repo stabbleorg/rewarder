@@ -38,6 +38,14 @@ pub fn process_update_realm<'a, 'b, 'c, 'info>(ctx: Context<'_, '_, 'info, 'info
     Ok(())
 }
 
+pub fn process_update_admin(ctx: Context<UpdateGoverno>, new_admin: Pubkey) -> Result<()> {
+    require_keys_neq!(ctx.accounts.governo.admin, new_admin);
+
+    ctx.accounts.governo.admin = new_admin;
+
+    Ok(())
+}
+
 #[derive(Accounts)]
 pub struct UpdateGoverno<'info> {
     pub admin: Signer<'info>,

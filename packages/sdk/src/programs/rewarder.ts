@@ -259,6 +259,35 @@ export class RewarderContext<
     return { address, signature };
   }
 
+  async updateAdmin({
+    rewarder,
+    adminAddress,
+    altAccounts,
+    priorityLevel,
+    maxPriorityMicroLamports,
+    simulate,
+  }: TransactionArgs<{
+    rewarder: Rewarder;
+    adminAddress: PublicKey;
+  }>): Promise<TransactionSignature> {
+    return this.sendSmartTransaction(
+      [
+        await this.program.methods
+          .updateAdmin(adminAddress)
+          .accountsStrict({
+            admin: rewarder.adminAddress,
+            rewarder: rewarder.address,
+          })
+          .instruction(),
+      ],
+      [],
+      altAccounts,
+      priorityLevel,
+      maxPriorityMicroLamports,
+      simulate,
+    );
+  }
+
   async updateRewarder({
     rewarder,
     totalRewards,
@@ -283,7 +312,7 @@ export class RewarderContext<
             new BN(endsAt.getTime() / 1000),
           )
           .accountsStrict({
-            admin: this.walletAddress,
+            admin: rewarder.adminAddress,
             rewarder: rewarder.address,
           })
           .instruction(),
@@ -345,7 +374,7 @@ export class RewarderContext<
         await this.program.methods
           .closeRewarder()
           .accountsStrict({
-            admin: this.walletAddress,
+            admin: rewarder.adminAddress,
             rewarder: rewarder.address,
             rewarderAuthority: rewarder.authorityAddress,
             mint: rewarder.mintAddress,

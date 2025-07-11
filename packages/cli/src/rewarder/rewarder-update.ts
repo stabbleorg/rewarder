@@ -4,6 +4,38 @@ import { RewarderContext } from "@stabbleorg/rewarder-sdk";
 import { useContext } from "../context";
 import { parseDate, parseKey } from "../utils";
 
+export function updateAdmin(program: Command) {
+  program
+    .command("rewarder-admin")
+    .description("update admin of the rewarder")
+    .requiredOption("--rewarder-k <string>", "rewarder key", parseKey)
+    .requiredOption("--admin-k <string>", "new admin key", parseKey)
+    .action(
+      async ({
+        rewarderK,
+        adminK,
+      }: {
+        rewarderK: PublicKey;
+        adminK: PublicKey;
+      }) => {
+        const { provider, priorityLevel, simulate } = useContext();
+
+        const rewarderContext = new RewarderContext(provider);
+
+        const rewarder = await rewarderContext.loadRewarder(rewarderK);
+
+        const signature = await rewarderContext.updateAdmin({
+          rewarder,
+          adminAddress: adminK,
+          priorityLevel,
+          simulate,
+        });
+
+        console.log(signature);
+      },
+    );
+}
+
 export function updateRewarder(program: Command) {
   program
     .command("rewarder-update")
