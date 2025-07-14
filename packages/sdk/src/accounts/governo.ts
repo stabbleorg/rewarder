@@ -4,6 +4,7 @@ import {
   getAssociatedTokenAddressSync,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
+import { Realm } from "@solana/spl-governance";
 import { SafeAmount } from "@stabbleorg/anchor-contrib";
 import { GovernoContext } from "../programs";
 

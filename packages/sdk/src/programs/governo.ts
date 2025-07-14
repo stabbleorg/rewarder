@@ -1,11 +1,15 @@
 import {
-  AccountMeta,
   Keypair,
   PublicKey,
   SystemProgram,
   TransactionInstruction,
   TransactionSignature,
 } from "@solana/web3.js";
+import {
+  getProposal,
+  getVoteRecordsByVoter,
+  withRelinquishVote,
+} from "@solana/spl-governance";
 import {
   createCreateMetadataAccountV3Instruction,
   PROGRAM_ID as MPL_TOKEN_METADATA_PROGRAM_ID,
@@ -809,6 +813,38 @@ export class GovernoContext<
     const lockerVeTokenAddress = locker.getAssociatedTokenAddress(
       locker.governo.veMintAddress,
     );
+    const tokenOwnerRecordAddress = GovernoContext.getTokenOwnerRecordAddress(
+      locker.governo.realmAddress,
+      locker.governo.veMintAddress,
+      locker.authorityAddress,
+    );
+
+    const voteRecords = await getVoteRecordsByVoter(
+      this.provider.connection,
+      SPL_GOVERNANCE_PROGRAM_ID,
+      locker.authorityAddress,
+    );
+    for (const record of voteRecords) {
+      const proposal = await getProposal(
+        this.provider.connection,
+        record.account.proposal,
+      );
+      if (!record.account.isRelinquished) {
+        await withRelinquishVote(
+          instructions,
+          SPL_GOVERNANCE_PROGRAM_ID,
+          3,
+          locker.governo.realmAddress,
+          proposal.account.governance,
+          proposal.pubkey,
+          tokenOwnerRecordAddress,
+          locker.governo.veMintAddress,
+          record.pubkey,
+          undefined,
+          undefined,
+        );
+      }
+    }
 
     instructions.push(
       await this.program.methods
@@ -831,11 +867,7 @@ export class GovernoContext<
             locker.governo.realmAddress,
             locker.governo.veMintAddress,
           ),
-          tokenOwnerRecord: GovernoContext.getTokenOwnerRecordAddress(
-            locker.governo.realmAddress,
-            locker.governo.veMintAddress,
-            locker.authorityAddress,
-          ),
+          tokenOwnerRecord: tokenOwnerRecordAddress,
         })
         .instruction(),
     );
