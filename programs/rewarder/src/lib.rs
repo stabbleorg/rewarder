@@ -22,6 +22,10 @@ pub mod rewarder {
         process_create_rewarder(ctx, total_rewards, epoch_starts_at, epoch_ends_at)
     }
 
+    pub fn update_admin(ctx: Context<UpdateRewarder>, new_admin: Pubkey) -> Result<()> {
+        process_update_admin(ctx, new_admin)
+    }
+
     pub fn update_rewarder(
         ctx: Context<UpdateRewarder>,
         total_rewards: u64,

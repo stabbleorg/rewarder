@@ -4,6 +4,7 @@ import {
   getAssociatedTokenAddressSync,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
+import { Realm } from "@solana/spl-governance";
 import { SafeAmount } from "@stabbleorg/anchor-contrib";
 import { GovernoContext } from "../programs";
 
@@ -38,6 +39,10 @@ export class Governo {
 
   get authorityAddress(): PublicKey {
     return GovernoContext.getGovernoAuthorityAddress(this.address);
+  }
+
+  get adminAddress(): PublicKey {
+    return this.data.admin;
   }
 
   get govMintAddress(): PublicKey {

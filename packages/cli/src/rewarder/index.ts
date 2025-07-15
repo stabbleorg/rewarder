@@ -1,6 +1,6 @@
 import type { Command } from "commander";
 import { createRewarder } from "./rewarder-create";
-import { updateRewarder } from "./rewarder-update";
+import { updateAdmin, updateRewarder } from "./rewarder-update";
 import { deriveRewarder } from "./rewarder-derive";
 import { closeRewarder } from "./rewarder-close";
 import { createPool } from "./pool-create";
@@ -12,6 +12,7 @@ import { fetchPools } from "./pool-fetch";
 
 export const setupRewarderProgram = (program: Command) => {
   createRewarder(program);
+  updateAdmin(program);
   updateRewarder(program);
   deriveRewarder(program);
   closeRewarder(program);

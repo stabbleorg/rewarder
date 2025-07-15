@@ -17,6 +17,10 @@ pub mod governo {
         process_create_governo(ctx, min_lock_duration, max_lock_duration)
     }
 
+    pub fn update_admin(ctx: Context<UpdateGoverno>, new_admin: Pubkey) -> Result<()> {
+        process_update_admin(ctx, new_admin)
+    }
+
     pub fn update_rewarder<'a, 'b, 'c, 'info>(ctx: Context<'_, '_, 'info, 'info, UpdateGoverno<'info>>) -> Result<()> {
         process_update_rewarder(ctx)
     }
