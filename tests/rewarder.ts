@@ -82,7 +82,7 @@ describe("rewarder", () => {
     );
   });
 
-  it("should create a rewarder", async () => {
+  it("should create and update a rewarder", async () => {
     const time = Date.now();
     const totalRewards = 1000000; // 1M
 
@@ -103,6 +103,29 @@ describe("rewarder", () => {
     assert.equal(rewarder.totalRewards, totalRewards);
 
     rewarderAddress = address;
+
+    await rewarderContext.updateRewarder({
+      rewarder,
+      totalRewards,
+      startsAt: new Date(time + 120_000),
+      endsAt: new Date(time + 240_000),
+      priorityLevel: "Default",
+      simulate: true,
+    });
+
+
+    const reductionSignature = await rewarderContext.reduceRewarderEmissions({
+      rewarder,
+      reduceAmount: 900_000,
+      priorityLevel: "Default",
+      simulate: false,
+    });
+    await provider.connection.confirmTransaction({
+      ...(await provider.connection.getLatestBlockhash()),
+      signature: reductionSignature,
+    });
+    const rewarderAfterReduction = await rewarderContext.loadRewarder(address);
+    assert.equal(rewarderAfterReduction.totalRewards, 100_000);
   });
 
   it("should create a pool", async () => {

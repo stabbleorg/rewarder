@@ -325,6 +325,37 @@ export class RewarderContext<
     );
   }
 
+  async reduceRewarderEmissions({
+    rewarder,
+    reduceAmount,
+    altAccounts,
+    priorityLevel,
+    maxPriorityMicroLamports,
+    simulate,
+  }: TransactionArgs<{
+    rewarder: Rewarder;
+    reduceAmount: string | number;
+  }>): Promise<TransactionSignature> {
+    return this.sendSmartTransaction(
+      [
+        await this.program.methods
+          .reduceRewarderEmissions(
+            SafeAmount.toU64Amount(reduceAmount, rewarder.data.decimals),
+          )
+          .accountsStrict({
+            admin: rewarder.adminAddress,
+            rewarder: rewarder.address,
+          })
+          .instruction(),
+      ],
+      [],
+      altAccounts,
+      priorityLevel,
+      maxPriorityMicroLamports,
+      simulate,
+    );
+  }
+
   async deriveRewarder({
     rewarderAddress,
     parentRewarderAddress,
