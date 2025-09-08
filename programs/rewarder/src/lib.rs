@@ -35,6 +35,11 @@ pub mod rewarder {
         process_update_rewarder(ctx, total_rewards, epoch_starts_at, epoch_ends_at)
     }
 
+	pub fn reduce_rewarder_emissions( ctx: Context<UpdateRewarder>, reduce_amount: u64 ) -> Result<()> {
+        process_reduce_rewarder_emissions(ctx, reduce_amount)
+    }
+
+
     #[access_control(ctx.accounts.validate())]
     pub fn derive_rewarder(ctx: Context<DeriveRewarder>) -> Result<()> {
         process_derive_rewarder(ctx)

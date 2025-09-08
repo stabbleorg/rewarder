@@ -2,7 +2,7 @@
   "compilerOptions": {
     "types": ["mocha", "chai"],
     "typeRoots": ["./node_modules/@types"],
-    "lib": ["es2015"],
+    "lib": ["es2015", "dom"],
     "module": "commonjs",
     "target": "es5",
     "esModuleInterop": true,
@@ -13,6 +13,6 @@
     "outDir": "dist",
     "strict": true
   },
-  "include": ["packages/**/*.ts", "packages/**/package.json"],
+  "include": ["packages/**/*.ts", "packages/**/package.json", "scripts/*.ts"],
   "exclude": ["dist", "node_modules"]
 }

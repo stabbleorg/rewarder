@@ -4,6 +4,9 @@ pub use rewarder_create::*;
 pub mod rewarder_update;
 pub use rewarder_update::*;
 
+pub mod rewarder_reduce;
+pub use rewarder_reduce::*;
+
 pub mod rewarder_derive;
 pub use rewarder_derive::*;
 
