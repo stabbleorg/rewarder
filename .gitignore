@@ -11,5 +11,4 @@ test-ledger
 .yarn
 *.log
 .env
-scripts
 .idea
