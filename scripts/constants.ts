@@ -1,7 +1,7 @@
 import {Connection, Keypair, PublicKey, Transaction, VersionedTransaction} from "@solana/web3.js";
 import {AnchorProvider, Program, Wallet} from "@coral-xyz/anchor";
 import {GovernoContext, RewarderContext, RewarderProgram} from "../packages/sdk";
-import AdminKeypair from "../../../Documents/stabble-keypair.json";
+import AdminKeypair from "../.keypair/admin.json";
 import RewarderIDL from "../target/idl/rewarder.json";
 import * as dotenv from 'dotenv';
 
@@ -27,8 +27,7 @@ export class ReadOnlyWallet implements Wallet {
   }
 }
 
-export const readonlyWallet = new ReadOnlyWallet(new PublicKey("BLGZz4hCK5prLg8CaFZmXQKvqttiyvVGLgA1jmvQN937"));
-export const provider = new AnchorProvider(connection, readonlyWallet);
+export const provider = new AnchorProvider(connection, new Wallet(keypair));
 export const governoContext = new GovernoContext(provider);
 export const rewarderContext = new RewarderContext(provider);
 export const rewarderProgram = new Program(RewarderIDL, provider) as unknown as RewarderProgram;

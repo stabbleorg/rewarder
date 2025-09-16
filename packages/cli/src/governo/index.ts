@@ -3,6 +3,7 @@ import { createGoverno } from "./governo-create";
 import { updateAdmin, updateRewarder, updateRealm } from "./governo-update";
 import { closeGoverno } from "./governo-close";
 import { lockerVotingWeight } from "./locker-voting-weight";
+import {governoAll} from "./governo-all";
 
 export const setupGovernoProgram = (program: Command) => {
   createGoverno(program);
@@ -11,4 +12,5 @@ export const setupGovernoProgram = (program: Command) => {
   updateRealm(program);
   closeGoverno(program);
   lockerVotingWeight(program);
+  governoAll(program);
 };
