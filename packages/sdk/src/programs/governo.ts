@@ -1002,7 +1002,6 @@ export class GovernoContext<
     // 1. User's gov token account (source of tokens to be locked)
     const userGovTokenAddress = this.getAssociatedTokenAddress(
       governo.govMintAddress,
-      owner
     );
 
     // 2. Create locker's gov token ATA (to hold locked tokens)
