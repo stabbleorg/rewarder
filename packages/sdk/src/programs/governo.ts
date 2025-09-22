@@ -964,12 +964,174 @@ export class GovernoContext<
       SPL_GOVERNANCE_PROGRAM_ID,
     )[0];
   }
+
+  async buildLockInstructions({
+    pool,
+    governo,
+    amount,
+    duration,
+    owner = this.walletAddress,
+    lockerKeypair = Keypair.generate(),
+  }: {
+    pool: Pool;
+    governo: Governo;
+    amount: string | number;
+    duration: number; // in days
+    owner?: PublicKey;
+    lockerKeypair?: Keypair;
+  }): Promise<{
+    instructions: TransactionInstruction[];
+    signers: Keypair[];
+    lockerAddress: PublicKey;
+    minerAddress: PublicKey;
+  }> {
+    if (!governo.veMintAddress.equals(pool.mintAddress)) {
+      throw new Error("Invalid rewards pool: veToken mint doesn't match");
+    }
+
+    if (!governo.rewarderAddress.equals(pool.rewarder.address)) {
+      throw new Error("Invalid rewarder account: doesn't match pool rewarder");
+    }
+
+    const instructions: TransactionInstruction[] = [];
+    const signers: Keypair[] = [lockerKeypair];
+
+    const lockerAddress = lockerKeypair.publicKey;
+    const lockerAuthorityAddress = GovernoContext.getLockerAuthorityAddress(lockerAddress);
+
+    // 1. User's gov token account (source of tokens to be locked)
+    const userGovTokenAddress = this.getAssociatedTokenAddress(
+      governo.govMintAddress,
+    );
+
+    // 2. Create locker's gov token ATA (to hold locked tokens)
+    const {
+      address: lockerGovTokenAddress,
+      instruction: createLockerGovAtaIX,
+    } = await this.getOrCreateAssociatedTokenAddressInstruction(
+      governo.govMintAddress,
+      lockerAuthorityAddress
+    );
+    if (createLockerGovAtaIX) {
+      instructions.push(createLockerGovAtaIX);
+    }
+
+    // 3. Create locker's veToken ATA
+    const {
+      address: lockerVeTokenAddress,
+      instruction: createLockerVeAtaIX,
+    } = await this.getOrCreateAssociatedTokenAddressInstruction(
+      governo.veMintAddress,
+      lockerAuthorityAddress
+    );
+    if (createLockerVeAtaIX) {
+      instructions.push(createLockerVeAtaIX);
+    }
+
+    // 4. Create locker account
+    const space = this.program.account.locker.size;
+    const lamports = await this.provider.connection.getMinimumBalanceForRentExemption(space);
+
+    instructions.push(
+      SystemProgram.createAccount({
+        fromPubkey: owner,
+        newAccountPubkey: lockerAddress,
+        space,
+        lamports,
+        programId: GOVERNO_PROGRAM_ID,
+      })
+    );
+
+    // 5. Create locker instruction (locks tokens & mints veTokens)
+    const lockDurationInSlots = duration * governo.data.minLockDuration;
+    const amountToLock = SafeAmount.toU64Amount(amount, governo.data.decimals);
+
+    instructions.push(
+      await this.program.methods
+        .createLocker(amountToLock, lockDurationInSlots)
+        .accountsStrict({
+          user: owner,
+          userGovToken: userGovTokenAddress,
+          lockerGovToken: lockerGovTokenAddress,
+          lockerVeToken: lockerVeTokenAddress,
+          govMint: governo.govMintAddress,
+          veMint: governo.veMintAddress,
+          locker: lockerAddress,
+          lockerAuthority: lockerAuthorityAddress,
+          governo: governo.address,
+          governoAuthority: governo.authorityAddress,
+          tokenProgram: TOKEN_PROGRAM_ID,
+        })
+        .instruction()
+    );
+
+    // 6. Create miner for rewards tracking
+    const minerAddress = RewarderContext.getMinerAddress(
+      lockerAuthorityAddress,
+      pool.address,
+    );
+
+    // Load the Rewarder program
+    const rewarderProgram = new Program(REWARDER_PROGRAM_IDL, this.provider);
+
+    instructions.push(
+      await rewarderProgram.methods
+        .createMiner(lockerAuthorityAddress)
+        .accountsStrict({
+          payer: owner,
+          miner: minerAddress,
+          pool: pool.address,
+          rewarder: pool.rewarder.address,
+          systemProgram: SystemProgram.programId,
+        })
+        .instruction()
+    );
+
+    // 7. Create miner's veToken ATA for staking rewards
+    const {
+      address: minerVeTokenAddress,
+      instruction: createMinerVeAtaIX,
+    } = await this.getOrCreateAssociatedTokenAddressInstruction(
+      pool.mintAddress,
+      minerAddress
+    );
+    if (createMinerVeAtaIX) {
+      instructions.push(createMinerVeAtaIX);
+    }
+
+    // 8. Stake the locker to start earning rewards
+    instructions.push(
+      await this.program.methods
+        .stakeLocker()
+        .accountsStrict({
+          locker: lockerAddress,
+          lockerAuthority: lockerAuthorityAddress,
+          governo: governo.address,
+          rewarderProgram: REWARDER_PROGRAM_ID,
+          miner: minerAddress,
+          pool: pool.address,
+          rewarder: pool.rewarder.address,
+          veMint: pool.mintAddress,
+          lockerVeToken: lockerVeTokenAddress,
+          minerVeToken: minerVeTokenAddress,
+          tokenProgram: TOKEN_PROGRAM_ID,
+        })
+        .instruction()
+    );
+
+    return {
+      instructions,
+      signers,
+      lockerAddress,
+      minerAddress,
+    };
+  }
 }
 
 export class GovernoListener {
   private governoUpdatedEvent: number = -1;
 
-  constructor(readonly program: GovernoProgram) {}
+  constructor(readonly program: GovernoProgram) { }
 
   addRewarderListeners(
     callback: (event: DataUpdatedEvent<Partial<GovernoData>>) => void,
