@@ -627,6 +627,58 @@ export class VestoContext<
       VESTO_PROGRAM_ID,
     )[0];
   }
+
+  async frozenRedeem({
+    frozenIouTokenAddress,
+    pool,
+    altAccounts,
+    priorityLevel,
+    maxPriorityMicroLamports,
+    simulate,
+  }: TransactionArgs<{
+    frozenIouTokenAddress: PublicKey;
+    pool: VestingPool;
+  }>): Promise<TransactionSignature> {
+    const instructions: TransactionInstruction[] = [];
+
+    const { address: freezeAuthorityGovTokenAddress, instruction: createGovTokenIX } =
+      await this.getOrCreateAssociatedTokenAddressInstruction(
+        pool.config.governo.govMintAddress,
+      );
+    if (createGovTokenIX) {
+      instructions.push(createGovTokenIX);
+    }
+
+    instructions.push(
+      await this.program.methods
+        .frozenRedeem()
+        .accountsStrict({
+          freezeAuthority: this.walletAddress,
+          frozenIouToken: frozenIouTokenAddress,
+          iouMint: pool.iouMintAddress,
+          pool: pool.address,
+          config: pool.config.address,
+          governo: pool.config.governo.address,
+          vaultAuthority: pool.config.authorityAddress,
+          vaultGovToken: pool.config.getAssociatedTokenAddress(
+            pool.config.governo.govMintAddress,
+          ),
+          govMint: pool.config.governo.govMintAddress,
+          freezeAuthorityGovToken: freezeAuthorityGovTokenAddress,
+          tokenProgram: TOKEN_PROGRAM_ID,
+        })
+        .instruction(),
+    );
+
+    return this.sendSmartTransaction(
+      instructions,
+      [],
+      altAccounts,
+      priorityLevel,
+      maxPriorityMicroLamports,
+      simulate,
+    );
+  }
 }
 
 export class VestoListener {

@@ -57,4 +57,8 @@ pub mod vesto {
     pub fn claim_position<'a, 'b, 'c, 'info>(ctx: Context<'_, '_, '_, 'info, ClaimPosition<'info>>) -> Result<()> {
         process_claim_position(ctx)
     }
+
+    pub fn frozen_redeem(ctx: Context<FrozenRedeem>) -> Result<()> {
+        process_frozen_redeem(ctx)
+    }
 }
