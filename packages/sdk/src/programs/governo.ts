@@ -526,7 +526,17 @@ export class GovernoContext<
       true,
     );
 
-    const instructions: TransactionInstruction[] = [
+    const instructions: TransactionInstruction[] = [];
+    const {
+      address: userRewardTokenAddress,
+      instruction: createUserRewardAtaIX,
+    } = await this.getOrCreateAssociatedTokenAddressInstruction(
+      pool.rewarder.mintAddress,
+      locker.ownerAddress,
+    );
+    if (createUserRewardAtaIX) instructions.push(createUserRewardAtaIX);
+
+    instructions.push(
       await this.program.methods
         .unstakeLocker()
         .accountsStrict({
@@ -543,16 +553,7 @@ export class GovernoContext<
           tokenProgram: TOKEN_PROGRAM_ID,
         })
         .instruction(),
-    ];
-
-    const {
-      address: userRewardTokenAddress,
-      instruction: createUserRewardAtaIX,
-    } = await this.getOrCreateAssociatedTokenAddressInstruction(
-      pool.rewarder.mintAddress,
-      locker.ownerAddress,
     );
-    if (createUserRewardAtaIX) instructions.push(createUserRewardAtaIX);
 
     const rewarderRewardTokenAddress = pool.rewarder.getAssociatedTokenAddress(
       pool.rewarder.mintAddress,
