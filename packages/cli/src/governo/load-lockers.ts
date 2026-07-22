@@ -3,6 +3,7 @@ import {GovernoContext} from "@stabbleorg/rewarder-sdk";
 import {useContext} from "../context";
 import {parseKey} from "../utils";
 import {PublicKey} from "@solana/web3.js";
+import BN from "bn.js";
 
 export function loadLockers(program: Command) {
   program
@@ -16,6 +17,11 @@ export function loadLockers(program: Command) {
       const lockers = await governoContext.loadLockers(governo, authorityK);
       lockers.forEach(locker => console.log({
         ...locker,
+        data: {
+          ...locker.data,
+          lockedAt: new Date(locker.data.lockedAt.mul(new BN(1_000)).toNumber()),
+          unlocksAt: new Date(locker.data.unlocksAt.mul(new BN(1_000)).toNumber()),
+        }
       }))
     });
 }

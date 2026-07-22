@@ -15,3 +15,6 @@ pub use position_redeem::*;
 
 pub mod position_update;
 pub use position_update::*;
+
+pub mod frozen_redeem;
+pub use frozen_redeem::*;
